@@ -3,7 +3,7 @@
 </div>
 
 ## Usage
-<!-- ### Online Demo
+### Online Demo
 
 ### Quick start
 #### 1. Clone this repo and setting up environment
