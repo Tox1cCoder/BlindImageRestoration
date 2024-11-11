@@ -8,7 +8,7 @@
 ### Quick start
 #### 1. Clone this repo and setting up environment
 ```sh
-git clone https://github.com/JY-Joy/InstantIR.githttps://github.com/Tox1cCoder/BlindImageRestoration.git
+git clone https://github.com/Tox1cCoder/BlindImageRestoration.git
 cd InstantIR
 conda create -n instantir python=3.9 -y
 conda activate instantir
