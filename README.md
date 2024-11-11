@@ -1,9 +1,8 @@
 <div align="center">
-<h1>InstantIR: Blind Image Restoration with</br>Instant Generative Reference</h1>
+<h1>Blind Image Restoration with</br>Instant Generative Reference</h1>
 </div>
 
 ## Usage
-### Online Demo
 
 ### Quick start
 #### 1. Clone this repo and setting up environment
