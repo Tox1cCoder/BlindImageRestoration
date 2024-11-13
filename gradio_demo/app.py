@@ -180,11 +180,9 @@ css = """
 with gr.Blocks() as demo:
     gr.Markdown(
         """
-        # InstantIR: Blind Image Restoration with Instant Generative Reference.
+        # Blind Image Restoration with Instant Generative Reference.
     
-        ### **Official 🤗 Gradio demo of [InstantIR](https://arxiv.org/abs/2410.06551).**
-        ### **InstantIR can not only help you restore your broken image, but also capable of imaginative re-creation following your text prompts. See advance usage for more details!**
-        ## Basic usage: revitalize your image
+        ## Basic usage:
         1. Upload an image you want to restore;
         2. Optionally, tune the `Steps` `CFG Scale` parameters. Typically higher steps lead to better results, but less than 50 is recommended for efficiency;
         3. Click `InstantIR magic!`.
