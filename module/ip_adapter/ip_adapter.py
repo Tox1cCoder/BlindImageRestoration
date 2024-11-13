@@ -1,18 +1,13 @@
-import os
-import torch
 from typing import List
-from collections import namedtuple, OrderedDict
+
+import torch
+
 
 def is_torch2_available():
     return hasattr(torch.nn.functional, "scaled_dot_product_attention")
 
+
 if is_torch2_available():
-    from .attention_processor import (
-        AttnProcessor2_0 as AttnProcessor,
-    )
-    from .attention_processor import (
-        CNAttnProcessor2_0 as CNAttnProcessor,
-    )
     from .attention_processor import (
         IPAttnProcessor2_0 as IPAttnProcessor,
     )
@@ -20,7 +15,7 @@ if is_torch2_available():
         TA_IPAttnProcessor2_0 as TA_IPAttnProcessor,
     )
 else:
-    from .attention_processor import AttnProcessor, CNAttnProcessor, IPAttnProcessor, TA_IPAttnProcessor
+    from .attention_processor import IPAttnProcessor, TA_IPAttnProcessor
 
 
 class ImageProjModel(torch.nn.Module):
@@ -45,16 +40,17 @@ class ImageProjModel(torch.nn.Module):
 
 class MLPProjModel(torch.nn.Module):
     """SD model with image prompt"""
+
     def __init__(self, cross_attention_dim=2048, clip_embeddings_dim=1280):
         super().__init__()
-        
+
         self.proj = torch.nn.Sequential(
             torch.nn.Linear(clip_embeddings_dim, clip_embeddings_dim),
             torch.nn.GELU(),
             torch.nn.Linear(clip_embeddings_dim, cross_attention_dim),
             torch.nn.LayerNorm(cross_attention_dim)
         )
-        
+
     def forward(self, image_embeds):
         clip_extra_context_tokens = self.proj(image_embeds)
         return clip_extra_context_tokens
@@ -92,6 +88,7 @@ class MultiIPAdapterImageProjection(torch.nn.Module):
 
 class IPAdapter(torch.nn.Module):
     """IP-Adapter"""
+
     def __init__(self, unet, image_proj_model, adapter_modules, ckpt_path=None):
         super().__init__()
         self.unet = unet
@@ -133,6 +130,7 @@ class IPAdapter(torch.nn.Module):
 
 class IPAdapterPlus(torch.nn.Module):
     """IP-Adapter"""
+
     def __init__(self, unet, image_proj_model, adapter_modules, ckpt_path=None):
         super().__init__()
         self.unet = unet
@@ -210,7 +208,8 @@ class IPAdapterXL(IPAdapter):
         ip_tokens = self.image_proj(image_embeds)
         encoder_hidden_states = torch.cat([encoder_hidden_states, ip_tokens], dim=1)
         # Predict the noise residual
-        noise_pred = self.unet(noisy_latents, timesteps, encoder_hidden_states, added_cond_kwargs=unet_added_cond_kwargs).sample
+        noise_pred = self.unet(noisy_latents, timesteps, encoder_hidden_states,
+                               added_cond_kwargs=unet_added_cond_kwargs).sample
         return noise_pred
 
 
@@ -221,7 +220,8 @@ class IPAdapterPlusXL(IPAdapterPlus):
         ip_tokens = self.image_proj(image_embeds)
         encoder_hidden_states = torch.cat([encoder_hidden_states, ip_tokens], dim=1)
         # Predict the noise residual
-        noise_pred = self.unet(noisy_latents, timesteps, encoder_hidden_states, added_cond_kwargs=unet_added_cond_kwargs).sample
+        noise_pred = self.unet(noisy_latents, timesteps, encoder_hidden_states,
+                               added_cond_kwargs=unet_added_cond_kwargs).sample
         return noise_pred
 
 

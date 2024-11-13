@@ -13,23 +13,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import torch
-import torch.nn.functional as F
 from torch import nn
 
 from diffusers.utils import deprecate, logging
 from diffusers.utils.torch_utils import maybe_allow_in_graph
 from diffusers.models.activations import GEGLU, GELU, ApproximateGELU
 from diffusers.models.attention_processor import Attention
-from diffusers.models.embeddings import SinusoidalPositionalEmbedding
-from diffusers.models.normalization import AdaLayerNorm, AdaLayerNormContinuous, AdaLayerNormZero, RMSNorm
 
 from module.min_sdxl import LoRACompatibleLinear, LoRALinearLayer
 
-
 logger = logging.get_logger(__name__)
+
 
 def create_custom_forward(module):
     def custom_forward(*inputs):
@@ -37,12 +34,14 @@ def create_custom_forward(module):
 
     return custom_forward
 
-def maybe_grad_checkpoint(resnet, attn, hidden_states, temb, encoder_hidden_states, adapter_hidden_states, do_ckpt=True):
 
+def maybe_grad_checkpoint(resnet, attn, hidden_states, temb, encoder_hidden_states, adapter_hidden_states,
+                          do_ckpt=True):
     if do_ckpt:
         hidden_states = torch.utils.checkpoint.checkpoint(create_custom_forward(resnet), hidden_states, temb)
         hidden_states, extracted_kv = torch.utils.checkpoint.checkpoint(
-            create_custom_forward(attn), hidden_states, encoder_hidden_states, adapter_hidden_states, use_reentrant=False
+            create_custom_forward(attn), hidden_states, encoder_hidden_states, adapter_hidden_states,
+            use_reentrant=False
         )
     else:
         hidden_states = resnet(hidden_states, temb)
@@ -83,6 +82,7 @@ def init_lora_in_attn(attn_module, rank: int = 4, is_kvcopy=False):
             )
         )
 
+
 def drop_kvs(encoder_kvs, drop_chance):
     for layer in encoder_kvs:
         len_tokens = encoder_kvs[layer].self_attention.k.shape[1]
@@ -93,17 +93,18 @@ def drop_kvs(encoder_kvs, drop_chance):
 
     return encoder_kvs
 
+
 def clone_kvs(encoder_kvs):
     cloned_kvs = {}
     for layer in encoder_kvs:
-        sa_cpy = KVCache(k=encoder_kvs[layer].self_attention.k.clone(), 
+        sa_cpy = KVCache(k=encoder_kvs[layer].self_attention.k.clone(),
                          v=encoder_kvs[layer].self_attention.v.clone())
 
         ca_cpy = KVCache(k=encoder_kvs[layer].cross_attention.k.clone(),
                          v=encoder_kvs[layer].cross_attention.v.clone())
 
         cloned_layer_cache = AttentionCache(self_attention=sa_cpy, cross_attention=ca_cpy)
-        
+
         cloned_kvs[layer] = cloned_layer_cache
 
     return cloned_kvs
@@ -114,14 +115,16 @@ class KVCache(object):
         self.k = k
         self.v = v
 
+
 class AttentionCache(object):
     def __init__(self, self_attention: KVCache, cross_attention: KVCache):
         self.self_attention = self_attention
         self.cross_attention = cross_attention
 
+
 class KVCopy(nn.Module):
     def __init__(
-        self, inner_dim, cross_attention_dim=None,
+            self, inner_dim, cross_attention_dim=None,
     ):
         super(KVCopy, self).__init__()
 
@@ -131,7 +134,6 @@ class KVCopy(nn.Module):
         self.to_v = LoRACompatibleLinear(in_dim, inner_dim, bias=False)
 
     def forward(self, hidden_states):
-
         k = self.to_k(hidden_states)
         v = self.to_v(hidden_states)
 
@@ -158,15 +160,15 @@ class FeedForward(nn.Module):
     """
 
     def __init__(
-        self,
-        dim: int,
-        dim_out: Optional[int] = None,
-        mult: int = 4,
-        dropout: float = 0.0,
-        activation_fn: str = "geglu",
-        final_dropout: bool = False,
-        inner_dim=None,
-        bias: bool = True,
+            self,
+            dim: int,
+            dim_out: Optional[int] = None,
+            mult: int = 4,
+            dropout: float = 0.0,
+            activation_fn: str = "geglu",
+            final_dropout: bool = False,
+            inner_dim=None,
+            bias: bool = True,
     ):
         super().__init__()
         if inner_dim is None:

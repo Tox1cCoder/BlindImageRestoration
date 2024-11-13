@@ -1,5 +1,6 @@
 import torch
 
+
 def tokenize_prompt(tokenizer, prompt):
     text_inputs = tokenizer(
         prompt,
@@ -51,26 +52,25 @@ def add_tokens(tokenizers, tokens, text_encoders):
                     f"The tokenizer already contains the token {token}. Please pass a different"
                     " `placeholder_token` that is not already in the tokenizer."
                 )
-            
+
             new_token_indices[f"{idx}_{token}"] = num_added_tokens
         # resize embedding layers to avoid crash. We will never actually use these.    
         text_encoders[idx].resize_token_embeddings(len(tokenizer), pad_to_multiple_of=128)
 
     return new_token_indices
-        
-            
+
+
 def patch_embedding_forward(embedding_layer, new_tokens, new_embeddings):
-    
     def new_forward(input):
         embedded_text = torch.nn.functional.embedding(
             input, embedding_layer.weight, embedding_layer.padding_idx, embedding_layer.max_norm,
             embedding_layer.norm_type, embedding_layer.scale_grad_by_freq, embedding_layer.sparse)
-        
+
         replace_indices = (input == new_tokens)
 
         if torch.count_nonzero(replace_indices) > 0:
             embedded_text[replace_indices] = new_embeddings
 
         return embedded_text
-    
+
     embedding_layer.forward = new_forward

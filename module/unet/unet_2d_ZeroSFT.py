@@ -19,10 +19,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.utils.checkpoint
-
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.loaders import PeftAdapterMixin, UNet2DConditionLoadersMixin
-from diffusers.utils import USE_PEFT_BACKEND, BaseOutput, deprecate, logging, scale_lora_layers, unscale_lora_layers
 from diffusers.models.activations import get_activation
 from diffusers.models.attention_processor import (
     ADDED_KV_ATTENTION_PROCESSORS,
@@ -45,12 +43,13 @@ from diffusers.models.embeddings import (
     Timesteps,
 )
 from diffusers.models.modeling_utils import ModelMixin
+from diffusers.utils import USE_PEFT_BACKEND, BaseOutput, deprecate, logging, scale_lora_layers, unscale_lora_layers
+
 from .unet_2d_ZeroSFT_blocks import (
     get_down_block,
     get_mid_block,
     get_up_block,
 )
-
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
@@ -111,7 +110,7 @@ class ZeroSFT(nn.Module):
         if self.pre_concat:
             assert h_ori is not None
 
-        c,h = down_block_res_samples
+        c, h = down_block_res_samples
         if h_ori is not None:
             h_raw = torch.cat([h_ori, h], dim=1)
         else:
@@ -248,60 +247,61 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
 
     @register_to_config
     def __init__(
-        self,
-        sample_size: Optional[int] = None,
-        in_channels: int = 4,
-        out_channels: int = 4,
-        center_input_sample: bool = False,
-        flip_sin_to_cos: bool = True,
-        freq_shift: int = 0,
-        down_block_types: Tuple[str] = (
-            "CrossAttnDownBlock2D",
-            "CrossAttnDownBlock2D",
-            "CrossAttnDownBlock2D",
-            "DownBlock2D",
-        ),
-        mid_block_type: Optional[str] = "UNetMidBlock2DCrossAttn",
-        up_block_types: Tuple[str] = ("UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D"),
-        only_cross_attention: Union[bool, Tuple[bool]] = False,
-        block_out_channels: Tuple[int] = (320, 640, 1280, 1280),
-        layers_per_block: Union[int, Tuple[int]] = 2,
-        downsample_padding: int = 1,
-        mid_block_scale_factor: float = 1,
-        dropout: float = 0.0,
-        act_fn: str = "silu",
-        norm_num_groups: Optional[int] = 32,
-        norm_eps: float = 1e-5,
-        cross_attention_dim: Union[int, Tuple[int]] = 1280,
-        transformer_layers_per_block: Union[int, Tuple[int], Tuple[Tuple]] = 1,
-        reverse_transformer_layers_per_block: Optional[Tuple[Tuple[int]]] = None,
-        encoder_hid_dim: Optional[int] = None,
-        encoder_hid_dim_type: Optional[str] = None,
-        attention_head_dim: Union[int, Tuple[int]] = 8,
-        num_attention_heads: Optional[Union[int, Tuple[int]]] = None,
-        dual_cross_attention: bool = False,
-        use_linear_projection: bool = False,
-        class_embed_type: Optional[str] = None,
-        addition_embed_type: Optional[str] = None,
-        addition_time_embed_dim: Optional[int] = None,
-        num_class_embeds: Optional[int] = None,
-        upcast_attention: bool = False,
-        resnet_time_scale_shift: str = "default",
-        resnet_skip_time_act: bool = False,
-        resnet_out_scale_factor: float = 1.0,
-        time_embedding_type: str = "positional",
-        time_embedding_dim: Optional[int] = None,
-        time_embedding_act_fn: Optional[str] = None,
-        timestep_post_act: Optional[str] = None,
-        time_cond_proj_dim: Optional[int] = None,
-        conv_in_kernel: int = 3,
-        conv_out_kernel: int = 3,
-        projection_class_embeddings_input_dim: Optional[int] = None,
-        attention_type: str = "default",
-        class_embeddings_concat: bool = False,
-        mid_block_only_cross_attention: Optional[bool] = None,
-        cross_attention_norm: Optional[str] = None,
-        addition_embed_type_num_heads: int = 64,
+            self,
+            sample_size: Optional[int] = None,
+            in_channels: int = 4,
+            out_channels: int = 4,
+            center_input_sample: bool = False,
+            flip_sin_to_cos: bool = True,
+            freq_shift: int = 0,
+            down_block_types: Tuple[str] = (
+                    "CrossAttnDownBlock2D",
+                    "CrossAttnDownBlock2D",
+                    "CrossAttnDownBlock2D",
+                    "DownBlock2D",
+            ),
+            mid_block_type: Optional[str] = "UNetMidBlock2DCrossAttn",
+            up_block_types: Tuple[str] = (
+            "UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D"),
+            only_cross_attention: Union[bool, Tuple[bool]] = False,
+            block_out_channels: Tuple[int] = (320, 640, 1280, 1280),
+            layers_per_block: Union[int, Tuple[int]] = 2,
+            downsample_padding: int = 1,
+            mid_block_scale_factor: float = 1,
+            dropout: float = 0.0,
+            act_fn: str = "silu",
+            norm_num_groups: Optional[int] = 32,
+            norm_eps: float = 1e-5,
+            cross_attention_dim: Union[int, Tuple[int]] = 1280,
+            transformer_layers_per_block: Union[int, Tuple[int], Tuple[Tuple]] = 1,
+            reverse_transformer_layers_per_block: Optional[Tuple[Tuple[int]]] = None,
+            encoder_hid_dim: Optional[int] = None,
+            encoder_hid_dim_type: Optional[str] = None,
+            attention_head_dim: Union[int, Tuple[int]] = 8,
+            num_attention_heads: Optional[Union[int, Tuple[int]]] = None,
+            dual_cross_attention: bool = False,
+            use_linear_projection: bool = False,
+            class_embed_type: Optional[str] = None,
+            addition_embed_type: Optional[str] = None,
+            addition_time_embed_dim: Optional[int] = None,
+            num_class_embeds: Optional[int] = None,
+            upcast_attention: bool = False,
+            resnet_time_scale_shift: str = "default",
+            resnet_skip_time_act: bool = False,
+            resnet_out_scale_factor: float = 1.0,
+            time_embedding_type: str = "positional",
+            time_embedding_dim: Optional[int] = None,
+            time_embedding_act_fn: Optional[str] = None,
+            timestep_post_act: Optional[str] = None,
+            time_cond_proj_dim: Optional[int] = None,
+            conv_in_kernel: int = 3,
+            conv_out_kernel: int = 3,
+            projection_class_embeddings_input_dim: Optional[int] = None,
+            attention_type: str = "default",
+            class_embeddings_concat: bool = False,
+            mid_block_only_cross_attention: Optional[bool] = None,
+            cross_attention_norm: Optional[str] = None,
+            addition_embed_type_num_heads: int = 64,
     ):
         super().__init__()
 
@@ -483,7 +483,7 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
             attention_head_dim=attention_head_dim[-1],
             dropout=dropout,
         )
-        self.mid_zero_SFT = ZeroSFT(block_out_channels[-1],block_out_channels[-1],0)
+        self.mid_zero_SFT = ZeroSFT(block_out_channels[-1], block_out_channels[-1], 0)
 
         # count how many layers upsample the images
         self.num_upsamplers = 0
@@ -565,17 +565,17 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
         self._set_pos_net_if_use_gligen(attention_type=attention_type, cross_attention_dim=cross_attention_dim)
 
     def _check_config(
-        self,
-        down_block_types: Tuple[str],
-        up_block_types: Tuple[str],
-        only_cross_attention: Union[bool, Tuple[bool]],
-        block_out_channels: Tuple[int],
-        layers_per_block: Union[int, Tuple[int]],
-        cross_attention_dim: Union[int, Tuple[int]],
-        transformer_layers_per_block: Union[int, Tuple[int], Tuple[Tuple[int]]],
-        reverse_transformer_layers_per_block: bool,
-        attention_head_dim: int,
-        num_attention_heads: Optional[Union[int, Tuple[int]]],
+            self,
+            down_block_types: Tuple[str],
+            up_block_types: Tuple[str],
+            only_cross_attention: Union[bool, Tuple[bool]],
+            block_out_channels: Tuple[int],
+            layers_per_block: Union[int, Tuple[int]],
+            cross_attention_dim: Union[int, Tuple[int]],
+            transformer_layers_per_block: Union[int, Tuple[int], Tuple[Tuple[int]]],
+            reverse_transformer_layers_per_block: bool,
+            attention_head_dim: int,
+            num_attention_heads: Optional[Union[int, Tuple[int]]],
     ):
         if len(down_block_types) != len(up_block_types):
             raise ValueError(
@@ -617,12 +617,12 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
                     raise ValueError("Must provide 'reverse_transformer_layers_per_block` if using asymmetrical UNet.")
 
     def _set_time_proj(
-        self,
-        time_embedding_type: str,
-        block_out_channels: int,
-        flip_sin_to_cos: bool,
-        freq_shift: float,
-        time_embedding_dim: int,
+            self,
+            time_embedding_type: str,
+            block_out_channels: int,
+            flip_sin_to_cos: bool,
+            freq_shift: float,
+            time_embedding_dim: int,
     ) -> Tuple[int, int]:
         if time_embedding_type == "fourier":
             time_embed_dim = time_embedding_dim or block_out_channels[0] * 2
@@ -645,10 +645,10 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
         return time_embed_dim, timestep_input_dim
 
     def _set_encoder_hid_proj(
-        self,
-        encoder_hid_dim_type: Optional[str],
-        cross_attention_dim: Union[int, Tuple[int]],
-        encoder_hid_dim: Optional[int],
+            self,
+            encoder_hid_dim_type: Optional[str],
+            cross_attention_dim: Union[int, Tuple[int]],
+            encoder_hid_dim: Optional[int],
     ):
         if encoder_hid_dim_type is None and encoder_hid_dim is not None:
             encoder_hid_dim_type = "text_proj"
@@ -685,13 +685,13 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
             self.encoder_hid_proj = None
 
     def _set_class_embedding(
-        self,
-        class_embed_type: Optional[str],
-        act_fn: str,
-        num_class_embeds: Optional[int],
-        projection_class_embeddings_input_dim: Optional[int],
-        time_embed_dim: int,
-        timestep_input_dim: int,
+            self,
+            class_embed_type: Optional[str],
+            act_fn: str,
+            num_class_embeds: Optional[int],
+            projection_class_embeddings_input_dim: Optional[int],
+            time_embed_dim: int,
+            timestep_input_dim: int,
     ):
         if class_embed_type is None and num_class_embeds is not None:
             self.class_embedding = nn.Embedding(num_class_embeds, time_embed_dim)
@@ -722,16 +722,16 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
             self.class_embedding = None
 
     def _set_add_embedding(
-        self,
-        addition_embed_type: str,
-        addition_embed_type_num_heads: int,
-        addition_time_embed_dim: Optional[int],
-        flip_sin_to_cos: bool,
-        freq_shift: float,
-        cross_attention_dim: Optional[int],
-        encoder_hid_dim: Optional[int],
-        projection_class_embeddings_input_dim: Optional[int],
-        time_embed_dim: int,
+            self,
+            addition_embed_type: str,
+            addition_embed_type_num_heads: int,
+            addition_time_embed_dim: Optional[int],
+            flip_sin_to_cos: bool,
+            freq_shift: float,
+            cross_attention_dim: Optional[int],
+            encoder_hid_dim: Optional[int],
+            projection_class_embeddings_input_dim: Optional[int],
+            time_embed_dim: int,
     ):
         if addition_embed_type == "text":
             if encoder_hid_dim is not None:
@@ -996,7 +996,7 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
                 module.set_lora_layer(None)
 
     def get_time_embed(
-        self, sample: torch.Tensor, timestep: Union[torch.Tensor, float, int]
+            self, sample: torch.Tensor, timestep: Union[torch.Tensor, float, int]
     ) -> Optional[torch.Tensor]:
         timesteps = timestep
         if not torch.is_tensor(timesteps):
@@ -1038,7 +1038,7 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
         return class_emb
 
     def get_aug_embed(
-        self, emb: torch.Tensor, encoder_hidden_states: torch.Tensor, added_cond_kwargs: Dict[str, Any]
+            self, emb: torch.Tensor, encoder_hidden_states: torch.Tensor, added_cond_kwargs: Dict[str, Any]
     ) -> Optional[torch.Tensor]:
         aug_emb = None
         if self.config.addition_embed_type == "text":
@@ -1090,7 +1090,7 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
         return aug_emb
 
     def process_encoder_hidden_states(
-        self, encoder_hidden_states: torch.Tensor, added_cond_kwargs: Dict[str, Any]
+            self, encoder_hidden_states: torch.Tensor, added_cond_kwargs: Dict[str, Any]
     ) -> torch.Tensor:
         if self.encoder_hid_proj is not None and self.config.encoder_hid_dim_type == "text_proj":
             encoder_hidden_states = self.encoder_hid_proj(encoder_hidden_states)
@@ -1122,20 +1122,20 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
         return encoder_hidden_states
 
     def forward(
-        self,
-        sample: torch.FloatTensor,
-        timestep: Union[torch.Tensor, float, int],
-        encoder_hidden_states: torch.Tensor,
-        class_labels: Optional[torch.Tensor] = None,
-        timestep_cond: Optional[torch.Tensor] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-        added_cond_kwargs: Optional[Dict[str, torch.Tensor]] = None,
-        down_block_additional_residuals: Optional[Tuple[torch.Tensor]] = None,
-        mid_block_additional_residual: Optional[torch.Tensor] = None,
-        down_intrablock_additional_residuals: Optional[Tuple[torch.Tensor]] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        return_dict: bool = True,
+            self,
+            sample: torch.FloatTensor,
+            timestep: Union[torch.Tensor, float, int],
+            encoder_hidden_states: torch.Tensor,
+            class_labels: Optional[torch.Tensor] = None,
+            timestep_cond: Optional[torch.Tensor] = None,
+            attention_mask: Optional[torch.Tensor] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+            added_cond_kwargs: Optional[Dict[str, torch.Tensor]] = None,
+            down_block_additional_residuals: Optional[Tuple[torch.Tensor]] = None,
+            mid_block_additional_residual: Optional[torch.Tensor] = None,
+            down_intrablock_additional_residuals: Optional[Tuple[torch.Tensor]] = None,
+            encoder_attention_mask: Optional[torch.Tensor] = None,
+            return_dict: bool = True,
     ) -> Union[UNet2DConditionOutput, Tuple]:
         r"""
         The [`UNet2DConditionModel`] forward method.
@@ -1185,7 +1185,7 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
         # The overall upsampling factor is equal to 2 ** (# num of upsampling layers).
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
         # on the fly if necessary.
-        default_overall_up_factor = 2**self.num_upsamplers
+        default_overall_up_factor = 2 ** self.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
         forward_upsample_size = False
@@ -1318,7 +1318,7 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
             new_down_block_res_samples = ()
 
             for down_block_additional_residual, down_block_res_sample in zip(
-                down_block_additional_residuals, down_block_res_samples
+                    down_block_additional_residuals, down_block_res_samples
             ):
                 down_block_res_sample_tuple = (down_block_additional_residual, down_block_res_sample)
                 new_down_block_res_samples = new_down_block_res_samples + (down_block_res_sample_tuple,)
@@ -1341,20 +1341,20 @@ class UNet2DZeroSFTModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin, P
 
             # To support T2I-Adapter-XL
             if (
-                is_adapter
-                and len(down_intrablock_additional_residuals) > 0
-                and sample.shape == down_intrablock_additional_residuals[0].shape
+                    is_adapter
+                    and len(down_intrablock_additional_residuals) > 0
+                    and sample.shape == down_intrablock_additional_residuals[0].shape
             ):
                 sample += down_intrablock_additional_residuals.pop(0)
 
         if is_controlnet:
-            sample = self.mid_zero_SFT((mid_block_additional_residual, sample),)
+            sample = self.mid_zero_SFT((mid_block_additional_residual, sample), )
 
         # 5. up
         for i, upsample_block in enumerate(self.up_blocks):
             is_final_block = i == len(self.up_blocks) - 1
 
-            res_samples = down_block_res_samples[-len(upsample_block.resnets) :]
+            res_samples = down_block_res_samples[-len(upsample_block.resnets):]
             down_block_res_samples = down_block_res_samples[: -len(upsample_block.resnets)]
 
             # if we have not reached the final block and need to forward the

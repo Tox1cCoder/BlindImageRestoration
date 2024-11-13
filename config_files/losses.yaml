@@ -1,9 +1,9 @@
 diffusion_losses:
-- name: L2Loss
-  weight: 1
+  - name: L2Loss
+    weight: 1
 lcm_losses:
-- name: HuberLoss
-  weight: 1
+  - name: HuberLoss
+    weight: 1
 # - name: DINOLoss
 #   weight: 1e-3
 # - name: L2Loss

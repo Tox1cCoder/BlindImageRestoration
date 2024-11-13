@@ -1,16 +1,14 @@
-import cv2
 import math
-import numpy as np
+import math
 import random
-import torch
-from torch.utils import data as data
 
+import numpy as np
+import torch
 from basicsr.data.degradations import circular_lowpass_kernel, random_mixed_kernels
-from basicsr.data.transforms import augment
-from basicsr.utils import img2tensor, DiffJPEG, USMSharp
-from basicsr.utils.img_process_util import filter2D
 from basicsr.data.degradations import random_add_gaussian_noise_pt, random_add_poisson_noise_pt
 from basicsr.data.transforms import paired_random_crop
+from basicsr.utils import DiffJPEG, USMSharp
+from basicsr.utils.img_process_util import filter2D
 
 AUGMENT_OPT = {
     'use_hflip': False,
@@ -62,6 +60,7 @@ DEGRADE_OPT = {
     'random_size': False,
     'resize_lq': True
 }
+
 
 class RealESRGANDegradation:
 
@@ -207,9 +206,9 @@ class RealESRGANDegradation:
         out = filter2D(im_gt, kernel)
         # random resize
         updown_type = random.choices(
-                ['up', 'down', 'keep'],
-                self.degrade_opt['resize_prob'],
-                )[0]
+            ['up', 'down', 'keep'],
+            self.degrade_opt['resize_prob'],
+        )[0]
         if updown_type == 'up':
             scale = random.uniform(1, self.degrade_opt['resize_range'][1])
         elif updown_type == 'down':
@@ -227,7 +226,7 @@ class RealESRGANDegradation:
                 clip=True,
                 rounds=False,
                 gray_prob=gray_noise_prob,
-                )
+            )
         else:
             out = random_add_poisson_noise_pt(
                 out,
@@ -247,9 +246,9 @@ class RealESRGANDegradation:
             out = filter2D(out, kernel2)
         # random resize
         updown_type = random.choices(
-                ['up', 'down', 'keep'],
-                self.degrade_opt['resize_prob2'],
-                )[0]
+            ['up', 'down', 'keep'],
+            self.degrade_opt['resize_prob2'],
+        )[0]
         if updown_type == 'up':
             scale = random.uniform(1, self.degrade_opt['resize_range2'][1])
         elif updown_type == 'down':
@@ -258,11 +257,11 @@ class RealESRGANDegradation:
             scale = 1
         mode = random.choice(['area', 'bilinear', 'bicubic'])
         out = torch.nn.functional.interpolate(
-                out,
-                size=(int(ori_h / self.degrade_opt['sf'] * scale),
-                      int(ori_w / self.degrade_opt['sf'] * scale)),
-                mode=mode,
-                )
+            out,
+            size=(int(ori_h / self.degrade_opt['sf'] * scale),
+                  int(ori_w / self.degrade_opt['sf'] * scale)),
+            mode=mode,
+        )
         # add noise
         gray_noise_prob = self.degrade_opt['gray_noise_prob2']
         if random.random() < self.degrade_opt['gaussian_noise_prob2']:
@@ -272,7 +271,7 @@ class RealESRGANDegradation:
                 clip=True,
                 rounds=False,
                 gray_prob=gray_noise_prob,
-                )
+            )
         else:
             out = random_add_poisson_noise_pt(
                 out,
@@ -280,7 +279,7 @@ class RealESRGANDegradation:
                 gray_prob=gray_noise_prob,
                 clip=True,
                 rounds=False,
-                )
+            )
 
         # JPEG compression + the final sinc filter
         # We also need to resize images to desired sizes. We group [resize back + sinc filter] together
@@ -293,11 +292,11 @@ class RealESRGANDegradation:
             # resize back + the final sinc filter
             mode = random.choice(['area', 'bilinear', 'bicubic'])
             out = torch.nn.functional.interpolate(
-                    out,
-                    size=(ori_h // self.degrade_opt['sf'],
-                          ori_w // self.degrade_opt['sf']),
-                    mode=mode,
-                    )
+                out,
+                size=(ori_h // self.degrade_opt['sf'],
+                      ori_w // self.degrade_opt['sf']),
+                mode=mode,
+            )
             out = out.contiguous()
             out = filter2D(out, sinc_kernel)
             # JPEG compression
@@ -312,11 +311,11 @@ class RealESRGANDegradation:
             # resize back + the final sinc filter
             mode = random.choice(['area', 'bilinear', 'bicubic'])
             out = torch.nn.functional.interpolate(
-                    out,
-                    size=(ori_h // self.degrade_opt['sf'],
-                          ori_w // self.degrade_opt['sf']),
-                    mode=mode,
-                    )
+                out,
+                size=(ori_h // self.degrade_opt['sf'],
+                      ori_w // self.degrade_opt['sf']),
+                mode=mode,
+            )
             out = out.contiguous()
             out = filter2D(out, sinc_kernel)
 
@@ -329,19 +328,19 @@ class RealESRGANDegradation:
 
         if self.degrade_opt['resize_lq']:
             im_lq = torch.nn.functional.interpolate(
-                    im_lq,
-                    size=(im_gt.size(-2),
-                          im_gt.size(-1)),
-                    mode='bicubic',
-                    )
+                im_lq,
+                size=(im_gt.size(-2),
+                      im_gt.size(-1)),
+                mode='bicubic',
+            )
 
         if random.random() < self.degrade_opt['no_degradation_prob'] or torch.isnan(im_lq).any():
             im_lq = im_gt
 
         # sharpen self.gt again, as we have changed the self.gt with self._dequeue_and_enqueue
         im_lq = im_lq.contiguous()  # for the warning: grad and param do not obey the gradient layout contract
-        im_lq = im_lq*2 - 1.0
-        im_gt = im_gt*2 - 1.0
+        im_lq = im_lq * 2 - 1.0
+        im_gt = im_gt * 2 - 1.0
 
         if self.degrade_opt['random_size']:
             raise NotImplementedError

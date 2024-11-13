@@ -1,17 +1,16 @@
-import torch
-import wandb
-import cv2
-import torch.nn.functional as F
-import numpy as np
-from torchvision import transforms
-from einops import rearrange
+import clip
 import kornia.augmentation as K
 import lpips
-
+import numpy as np
+import torch
+import torch.nn.functional as F
+import wandb
+from einops import rearrange
 from pretrained_models.arcface import Backbone
-from utils.vis_utils import add_text_to_image
+from torchvision import transforms
+
 from utils.utils import extract_faces_and_landmarks
-import clip
+from utils.vis_utils import add_text_to_image
 
 
 class Loss():
@@ -20,12 +19,13 @@ class Loss():
     Mainly handles dtype and visualize_every_k.
     keeps current iteration of loss, mainly for visualization purposes.
     """
+
     def __init__(self, visualize_every_k=-1, dtype=torch.float32, accelerator=None, **kwargs):
         self.visualize_every_k = visualize_every_k
         self.iteration = -1
-        self.dtype=dtype
+        self.dtype = dtype
         self.accelerator = accelerator
-        
+
     def __call__(self, **kwargs):
         self.iteration += 1
         return self.forward(**kwargs)
@@ -39,11 +39,12 @@ class L1Loss(Loss):
         predicted_pixel_values (torch.Tensor): The predicted pixel values using 1 step LCM and the VAE decoder.
         encoder_pixel_values (torch.Tesnor): The input image to the encoder
     """
+
     def forward(
-        self, 
-        predict: torch.Tensor,
-        target: torch.Tensor,
-        **kwargs
+            self,
+            predict: torch.Tensor,
+            target: torch.Tensor,
+            **kwargs
     ) -> torch.Tensor:
         return F.l1_loss(predict, target, reduction="mean")
 
@@ -54,7 +55,8 @@ class LPIPSLoss(Loss):
         predicted_pixel_values (torch.Tensor): The predicted pixel values using 1 step LCM and the VAE decoder.
         encoder_pixel_values (torch.Tesnor): The input image to the encoder
     """
-    def __init__(self,  **kwargs):
+
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.model = lpips.LPIPS(net='vgg')
         self.model.to(dtype=self.dtype, device=self.accelerator.device)
@@ -73,13 +75,14 @@ class LCMVisualization(Loss):
         pixel_values (torch.Tensor): The input image to the decoder
         encoder_pixel_values (torch.Tesnor): The input image to the encoder
     """
+
     def forward(
-        self, 
-        predicted_pixel_values: torch.Tensor,
-        pixel_values: torch.Tensor,
-        encoder_pixel_values: torch.Tensor,
-        timesteps: torch.Tensor,
-        **kwargs,
+            self,
+            predicted_pixel_values: torch.Tensor,
+            pixel_values: torch.Tensor,
+            encoder_pixel_values: torch.Tensor,
+            timesteps: torch.Tensor,
+            **kwargs,
     ) -> None:
         if self.visualize_every_k > 0 and self.iteration % self.visualize_every_k == 0:
             predicted_pixel_values = rearrange(predicted_pixel_values, "n c h w -> (n h) w c").detach().cpu().numpy()
@@ -88,7 +91,8 @@ class LCMVisualization(Loss):
             image = np.hstack([encoder_pixel_values, pixel_values, predicted_pixel_values])
             for tracker in self.accelerator.trackers:
                 if tracker.name == 'wandb':
-                    tracker.log({"TrainVisualization": wandb.Image(image, caption=f"Encoder Input Image, Decoder Input Image, Predicted LCM Image. Timesteps {timesteps.cpu().tolist()}")})
+                    tracker.log({"TrainVisualization": wandb.Image(image,
+                                                                   caption=f"Encoder Input Image, Decoder Input Image, Predicted LCM Image. Timesteps {timesteps.cpu().tolist()}")})
         return torch.tensor(0.0)
 
 
@@ -100,12 +104,13 @@ class L2Loss(Loss):
         predicted_noise (torch.Tensor): noise predicted by the diffusion model
         target_noise (torch.Tensor): actual noise added to the image.
     """
+
     def forward(
-        self,
-        predict: torch.Tensor,
-        target: torch.Tensor,
-        weights: torch.Tensor = None,
-        **kwargs
+            self,
+            predict: torch.Tensor,
+            target: torch.Tensor,
+            weights: torch.Tensor = None,
+            **kwargs
     ) -> torch.Tensor:
         if weights is not None:
             loss = (predict.float() - target.float()).pow(2) * weights
@@ -119,18 +124,19 @@ class HuberLoss(Loss):
         predicted_pixel_values (torch.Tensor): The predicted pixel values using 1 step LCM and the VAE decoder.
         encoder_pixel_values (torch.Tesnor): The input image to the encoder
     """
+
     def __init__(self, huber_c=0.001, **kwargs):
         super().__init__(**kwargs)
         self.huber_c = huber_c
 
     def forward(
-        self,
-        predict: torch.Tensor,
-        target: torch.Tensor,
-        weights: torch.Tensor = None,
-        **kwargs
+            self,
+            predict: torch.Tensor,
+            target: torch.Tensor,
+            weights: torch.Tensor = None,
+            **kwargs
     ) -> torch.Tensor:
-        loss = torch.sqrt((predict.float() - target.float()) ** 2 + self.huber_c**2) - self.huber_c
+        loss = torch.sqrt((predict.float() - target.float()) ** 2 + self.huber_c ** 2) - self.huber_c
         if weights is not None:
             return (loss * weights).mean()
         return loss.mean()
@@ -145,12 +151,13 @@ class WeightedNoiseLoss(Loss):
         target_noise (torch.Tensor): actual noise added to the image.
         loss_batch_weights (torch.Tensor): weighting for each batch item. Can be used to e.g. zero-out loss for InstantID training if keypoint extraction fails.
     """
+
     def forward(
-        self,
-        predict: torch.Tensor,
-        target: torch.Tensor,
-        weights,
-        **kwargs
+            self,
+            predict: torch.Tensor,
+            target: torch.Tensor,
+            weights,
+            **kwargs
     ) -> torch.Tensor:
         return F.mse_loss(predict.float() * weights, target.float() * weights, reduction="mean")
 
@@ -162,10 +169,11 @@ class IDLoss(Loss):
     Then we use the cosine similarity between the features to calculate the loss. (The cosine similarity is 1 - cosine distance).
     Also notice that the outputs of facenet are normalized so the dot product is the same as cosine distance.
     """
+
     def __init__(self, pretrained_arcface_path: str, skip_not_found=True, **kwargs):
         super().__init__(**kwargs)
-        assert pretrained_arcface_path is not None, "please pass `pretrained_arcface_path` in the losses config. You can download the pretrained model from "\
-            "https://drive.google.com/file/d/1KW7bjndL3QG3sxBbZxreGHigcCCpsDgn/view?usp=sharing"
+        assert pretrained_arcface_path is not None, "please pass `pretrained_arcface_path` in the losses config. You can download the pretrained model from " \
+                                                    "https://drive.google.com/file/d/1KW7bjndL3QG3sxBbZxreGHigcCCpsDgn/view?usp=sharing"
         self.mtcnn = MTCNN(device=self.accelerator.device)
         self.mtcnn.forward = self.mtcnn.detect
         self.facenet_input_size = 112  # Has to be 112, can't find weights for 224 size.
@@ -176,7 +184,8 @@ class IDLoss(Loss):
         self.facenet.eval()
         self.facenet.to(device=self.accelerator.device, dtype=self.dtype)  # not implemented for half precision
         self.face_pool.to(device=self.accelerator.device, dtype=self.dtype)  # not implemented for half precision
-        self.visualization_resize = transforms.Resize((self.facenet_input_size, self.facenet_input_size), interpolation=transforms.InterpolationMode.BICUBIC)
+        self.visualization_resize = transforms.Resize((self.facenet_input_size, self.facenet_input_size),
+                                                      interpolation=transforms.InterpolationMode.BICUBIC)
         self.reference_facial_points = np.array([[38.29459953, 51.69630051],
                                                  [72.53179932, 51.50139999],
                                                  [56.02519989, 71.73660278],
@@ -186,7 +195,7 @@ class IDLoss(Loss):
         self.facenet, self.face_pool, self.mtcnn = self.accelerator.prepare(self.facenet, self.face_pool, self.mtcnn)
 
         self.skip_not_found = skip_not_found
-    
+
     def extract_feats(self, x: torch.Tensor):
         """
         Extract features from the face of the image using facenet model.
@@ -197,19 +206,21 @@ class IDLoss(Loss):
         return x_feats
 
     def forward(
-        self, 
-        predicted_pixel_values: torch.Tensor,
-        encoder_pixel_values: torch.Tensor,
-        timesteps: torch.Tensor,
-        **kwargs
+            self,
+            predicted_pixel_values: torch.Tensor,
+            encoder_pixel_values: torch.Tensor,
+            timesteps: torch.Tensor,
+            **kwargs
     ):
         encoder_pixel_values = encoder_pixel_values.to(dtype=self.dtype)
         predicted_pixel_values = predicted_pixel_values.to(dtype=self.dtype)
 
-        predicted_pixel_values_face, predicted_invalid_indices = extract_faces_and_landmarks(predicted_pixel_values, mtcnn=self.mtcnn)
+        predicted_pixel_values_face, predicted_invalid_indices = extract_faces_and_landmarks(predicted_pixel_values,
+                                                                                             mtcnn=self.mtcnn)
         with torch.no_grad():
-            encoder_pixel_values_face, source_invalid_indices = extract_faces_and_landmarks(encoder_pixel_values, mtcnn=self.mtcnn)
-        
+            encoder_pixel_values_face, source_invalid_indices = extract_faces_and_landmarks(encoder_pixel_values,
+                                                                                            mtcnn=self.mtcnn)
+
         if self.skip_not_found:
             valid_indices = []
             for i in range(predicted_pixel_values.shape[0]):
@@ -217,50 +228,62 @@ class IDLoss(Loss):
                     valid_indices.append(i)
         else:
             valid_indices = list(range(predicted_pixel_values))
-            
+
         valid_indices = torch.tensor(valid_indices).to(device=predicted_pixel_values.device)
 
         if len(valid_indices) == 0:
-            loss =  (predicted_pixel_values_face * 0.0).mean()  # It's done this way so the `backwards` will delete the computation graph of the predicted_pixel_values.
+            loss = (
+                        predicted_pixel_values_face * 0.0).mean()  # It's done this way so the `backwards` will delete the computation graph of the predicted_pixel_values.
             if self.visualize_every_k > 0 and self.iteration % self.visualize_every_k == 0:
-                self.visualize(predicted_pixel_values, encoder_pixel_values, predicted_pixel_values_face, encoder_pixel_values_face, timesteps, valid_indices, loss)
+                self.visualize(predicted_pixel_values, encoder_pixel_values, predicted_pixel_values_face,
+                               encoder_pixel_values_face, timesteps, valid_indices, loss)
             return loss
 
         with torch.no_grad():
             pixel_values_feats = self.extract_feats(encoder_pixel_values_face[valid_indices])
-            
+
         predicted_pixel_values_feats = self.extract_feats(predicted_pixel_values_face[valid_indices])
         loss = 1 - torch.einsum("bi,bi->b", pixel_values_feats, predicted_pixel_values_feats)
 
         if self.visualize_every_k > 0 and self.iteration % self.visualize_every_k == 0:
-            self.visualize(predicted_pixel_values, encoder_pixel_values, predicted_pixel_values_face, encoder_pixel_values_face, timesteps, valid_indices, loss)
+            self.visualize(predicted_pixel_values, encoder_pixel_values, predicted_pixel_values_face,
+                           encoder_pixel_values_face, timesteps, valid_indices, loss)
         return loss.mean()
-    
+
     def visualize(
-        self,
-        predicted_pixel_values: torch.Tensor,
-        encoder_pixel_values: torch.Tensor,
-        predicted_pixel_values_face: torch.Tensor,
-        encoder_pixel_values_face: torch.Tensor,
-        timesteps: torch.Tensor,
-        valid_indices: torch.Tensor,
-        loss: torch.Tensor,
+            self,
+            predicted_pixel_values: torch.Tensor,
+            encoder_pixel_values: torch.Tensor,
+            predicted_pixel_values_face: torch.Tensor,
+            encoder_pixel_values_face: torch.Tensor,
+            timesteps: torch.Tensor,
+            valid_indices: torch.Tensor,
+            loss: torch.Tensor,
     ) -> None:
-        small_predicted_pixel_values = (rearrange(self.visualization_resize(predicted_pixel_values), "n c h w -> (n h) w c").detach().cpu().numpy())
-        small_pixle_values = rearrange(self.visualization_resize(encoder_pixel_values), "n c h w -> (n h) w c").detach().cpu().numpy() 
-        small_predicted_pixel_values_face = rearrange(self.visualization_resize(predicted_pixel_values_face), "n c h w -> (n h) w c").detach().cpu().numpy()
-        small_pixle_values_face = rearrange(self.visualization_resize(encoder_pixel_values_face), "n c h w -> (n h) w c").detach().cpu().numpy()
-        
-        small_predicted_pixel_values = add_text_to_image(((small_predicted_pixel_values * 0.5 + 0.5) * 255).astype(np.uint8), "Pred Images", add_below=False)
-        small_pixle_values = add_text_to_image(((small_pixle_values * 0.5 + 0.5) * 255).astype(np.uint8), "Target Images", add_below=False)
-        small_predicted_pixel_values_face = add_text_to_image(((small_predicted_pixel_values_face * 0.5 + 0.5) * 255).astype(np.uint8), "Pred Faces", add_below=False)
-        small_pixle_values_face = add_text_to_image(((small_pixle_values_face * 0.5 + 0.5) * 255).astype(np.uint8), "Target Faces", add_below=False)
+        small_predicted_pixel_values = (
+            rearrange(self.visualization_resize(predicted_pixel_values), "n c h w -> (n h) w c").detach().cpu().numpy())
+        small_pixle_values = rearrange(self.visualization_resize(encoder_pixel_values),
+                                       "n c h w -> (n h) w c").detach().cpu().numpy()
+        small_predicted_pixel_values_face = rearrange(self.visualization_resize(predicted_pixel_values_face),
+                                                      "n c h w -> (n h) w c").detach().cpu().numpy()
+        small_pixle_values_face = rearrange(self.visualization_resize(encoder_pixel_values_face),
+                                            "n c h w -> (n h) w c").detach().cpu().numpy()
 
+        small_predicted_pixel_values = add_text_to_image(
+            ((small_predicted_pixel_values * 0.5 + 0.5) * 255).astype(np.uint8), "Pred Images", add_below=False)
+        small_pixle_values = add_text_to_image(((small_pixle_values * 0.5 + 0.5) * 255).astype(np.uint8),
+                                               "Target Images", add_below=False)
+        small_predicted_pixel_values_face = add_text_to_image(
+            ((small_predicted_pixel_values_face * 0.5 + 0.5) * 255).astype(np.uint8), "Pred Faces", add_below=False)
+        small_pixle_values_face = add_text_to_image(((small_pixle_values_face * 0.5 + 0.5) * 255).astype(np.uint8),
+                                                    "Target Faces", add_below=False)
 
-        final_image = np.hstack([small_predicted_pixel_values, small_pixle_values, small_predicted_pixel_values_face, small_pixle_values_face])
+        final_image = np.hstack([small_predicted_pixel_values, small_pixle_values, small_predicted_pixel_values_face,
+                                 small_pixle_values_face])
         for tracker in self.accelerator.trackers:
             if tracker.name == 'wandb':
-                tracker.log({"IDLoss Visualization": wandb.Image(final_image, caption=f"loss: {loss.cpu().tolist()} timesteps: {timesteps.cpu().tolist()}, valid_indices: {valid_indices.cpu().tolist()}")})
+                tracker.log({"IDLoss Visualization": wandb.Image(final_image,
+                                                                 caption=f"loss: {loss.cpu().tolist()} timesteps: {timesteps.cpu().tolist()}, valid_indices: {valid_indices.cpu().tolist()}")})
 
 
 class ImageAugmentations(torch.nn.Module):
@@ -311,10 +334,11 @@ class CLIPLoss(Loss):
         self.clip_model.device = None
 
         self.clip_model.eval().requires_grad_(False)
-        
-        self.preprocess = transforms.Compose([transforms.Normalize(mean=[-1.0, -1.0, -1.0], std=[2.0, 2.0, 2.0])] + # Un-normalize from [-1.0, 1.0] (SD output) to [0, 1].
-                                              clip_preprocess.transforms[:2] +                                      # to match CLIP input scale assumptions
-                                              clip_preprocess.transforms[4:])                                       # + skip convert PIL to tensor
+
+        self.preprocess = transforms.Compose([transforms.Normalize(mean=[-1.0, -1.0, -1.0], std=[2.0, 2.0,
+                                                                                                 2.0])] +  # Un-normalize from [-1.0, 1.0] (SD output) to [0, 1].
+                                             clip_preprocess.transforms[:2] +  # to match CLIP input scale assumptions
+                                             clip_preprocess.transforms[4:])  # + skip convert PIL to tensor
 
         self.clip_size = self.clip_model.visual.input_resolution
 
@@ -324,16 +348,15 @@ class CLIPLoss(Loss):
 
         self.image_augmentations = ImageAugmentations(output_size=self.clip_size,
                                                       augmentations_number=augmentations_number)
-        
+
         self.clip_model, self.image_augmentations = self.accelerator.prepare(self.clip_model, self.image_augmentations)
 
     def forward(self, decoder_prompts, predicted_pixel_values: torch.Tensor, **kwargs) -> torch.Tensor:
-
         if not isinstance(decoder_prompts, list):
             decoder_prompts = [decoder_prompts]
 
         tokens = clip.tokenize(decoder_prompts).to(predicted_pixel_values.device)
-        image  = self.preprocess(predicted_pixel_values)
+        image = self.preprocess(predicted_pixel_values)
 
         logits_per_image, _ = self.clip_model(image, tokens)
 
@@ -404,7 +427,7 @@ class DINOLoss(Loss):
         else:
             image_enc_hidden_states = self.dino_model(encoder_input).last_hidden_state
 
-        teacher_output, student_output = image_enc_hidden_states.chunk(2, dim=0)         # [B, 257, 1024]
+        teacher_output, student_output = image_enc_hidden_states.chunk(2, dim=0)  # [B, 257, 1024]
 
         student_out = student_output.float() / self.student_temp
 

@@ -1,16 +1,17 @@
+import json
+import random
 from pathlib import Path
 from typing import Optional
 
+import torch
 from PIL import Image
 from PIL.ImageOps import exif_transpose
+from facenet_pytorch import MTCNN
 from torch.utils.data import Dataset
 from torchvision import transforms
-import json
-import random
-from facenet_pytorch import MTCNN
-import torch
 
 from utils.utils import extract_faces_and_landmarks, REFERNCE_FACIAL_POINTS_RELATIVE
+
 
 def load_image(image_path: str) -> Image:
     image = Image.open(image_path)
@@ -44,7 +45,8 @@ class ImageDataset(Dataset):
         self.mtcnn = MTCNN(device='cuda:0')
         self.mtcnn.forward = self.mtcnn.detect
         resize_factor = 1.3
-        self.resized_reference_points = REFERNCE_FACIAL_POINTS_RELATIVE / resize_factor + (resize_factor - 1) / (2 * resize_factor) 
+        self.resized_reference_points = REFERNCE_FACIAL_POINTS_RELATIVE / resize_factor + (resize_factor - 1) / (
+                    2 * resize_factor)
         self.size = size
         self.center_crop = center_crop
         self.concept_placeholder = concept_placeholder
@@ -141,7 +143,8 @@ class ImageDataset(Dataset):
 
         if self.name_to_label is None:
             # If no labels, simply take the same image but with different augmentation
-            example["encoder_images"] = self.aug_transforms(example["instance_images"]) if self.aug_images else example["instance_images"]
+            example["encoder_images"] = self.aug_transforms(example["instance_images"]) if self.aug_images else example[
+                "instance_images"]
             example["encoder_prompt"] = example["instance_prompt"]
         else:
             # Randomly select another image with the same label
@@ -161,10 +164,12 @@ class ImageDataset(Dataset):
                 example["encoder_prompt"] = self._path_to_prompt(self.instance_data_root / encoder_image_name)
             else:
                 example["encoder_prompt"] = self.instance_prompt
-        
+
         if self.crop_head_for_encoder_image:
-            example["encoder_images"] = extract_faces_and_landmarks(example["encoder_images"][None], self.size, self.mtcnn, self.resized_reference_points)[0][0]
-        example["encoder_prompt"]  = example["encoder_prompt"].format(placeholder="<ph>")
+            example["encoder_images"] = \
+            extract_faces_and_landmarks(example["encoder_images"][None], self.size, self.mtcnn,
+                                        self.resized_reference_points)[0][0]
+        example["encoder_prompt"] = example["encoder_prompt"].format(placeholder="<ph>")
         example["instance_prompt"] = example["instance_prompt"].format(placeholder="<s*>")
 
         if random.random() < self.random_target_prob:
@@ -174,7 +179,6 @@ class ImageDataset(Dataset):
             example["instance_images"] = self.image_transforms(random_image)
             if self.prompt_in_filename:
                 example["instance_prompt"] = self._path_to_prompt(random_path)
-
 
         if self.use_only_decoder_prompts:
             example["encoder_prompt"] = example["instance_prompt"]

@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, List
 
 
@@ -6,7 +6,8 @@ from typing import Optional, List
 class SingleDataConfig:
     dataset_folder: str
     imagefolder: bool = True
-    dataset_weight: float = 1.0 # Not used yet
+    dataset_weight: float = 1.0  # Not used yet
+
 
 @dataclass
 class DataConfig:

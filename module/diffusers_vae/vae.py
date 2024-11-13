@@ -17,9 +17,6 @@ from typing import Optional, Tuple
 import numpy as np
 import torch
 import torch.nn as nn
-
-from diffusers.utils import BaseOutput, is_torch_version
-from diffusers.utils.torch_utils import randn_tensor
 from diffusers.models.activations import get_activation
 from diffusers.models.attention_processor import SpatialNorm
 from diffusers.models.unet_2d_blocks import (
@@ -28,6 +25,8 @@ from diffusers.models.unet_2d_blocks import (
     get_down_block,
     get_up_block,
 )
+from diffusers.utils import BaseOutput, is_torch_version
+from diffusers.utils.torch_utils import randn_tensor
 
 
 @dataclass
@@ -68,16 +67,16 @@ class Encoder(nn.Module):
     """
 
     def __init__(
-        self,
-        in_channels: int = 3,
-        out_channels: int = 3,
-        down_block_types: Tuple[str, ...] = ("DownEncoderBlock2D",),
-        block_out_channels: Tuple[int, ...] = (64,),
-        layers_per_block: int = 2,
-        norm_num_groups: int = 32,
-        act_fn: str = "silu",
-        double_z: bool = True,
-        mid_block_add_attention=True,
+            self,
+            in_channels: int = 3,
+            out_channels: int = 3,
+            down_block_types: Tuple[str, ...] = ("DownEncoderBlock2D",),
+            block_out_channels: Tuple[int, ...] = (64,),
+            layers_per_block: int = 2,
+            norm_num_groups: int = 32,
+            act_fn: str = "silu",
+            double_z: bool = True,
+            mid_block_add_attention=True,
     ):
         super().__init__()
         self.layers_per_block = layers_per_block
@@ -206,16 +205,16 @@ class Decoder(nn.Module):
     """
 
     def __init__(
-        self,
-        in_channels: int = 3,
-        out_channels: int = 3,
-        up_block_types: Tuple[str, ...] = ("UpDecoderBlock2D",),
-        block_out_channels: Tuple[int, ...] = (64,),
-        layers_per_block: int = 2,
-        norm_num_groups: int = 32,
-        act_fn: str = "silu",
-        norm_type: str = "group",  # group, spatial
-        mid_block_add_attention=True,
+            self,
+            in_channels: int = 3,
+            out_channels: int = 3,
+            up_block_types: Tuple[str, ...] = ("UpDecoderBlock2D",),
+            block_out_channels: Tuple[int, ...] = (64,),
+            layers_per_block: int = 2,
+            norm_num_groups: int = 32,
+            act_fn: str = "silu",
+            norm_type: str = "group",  # group, spatial
+            mid_block_add_attention=True,
     ):
         super().__init__()
         self.layers_per_block = layers_per_block
@@ -283,9 +282,9 @@ class Decoder(nn.Module):
         self.gradient_checkpointing = False
 
     def forward(
-        self,
-        sample: torch.FloatTensor,
-        latent_embeds: Optional[torch.FloatTensor] = None,
+            self,
+            sample: torch.FloatTensor,
+            latent_embeds: Optional[torch.FloatTensor] = None,
     ) -> torch.FloatTensor:
         r"""The forward method of the `Decoder` class."""
 
@@ -362,9 +361,9 @@ class UpSample(nn.Module):
     """
 
     def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
+            self,
+            in_channels: int,
+            out_channels: int,
     ) -> None:
         super().__init__()
         self.in_channels = in_channels
@@ -384,11 +383,11 @@ class MaskConditionEncoder(nn.Module):
     """
 
     def __init__(
-        self,
-        in_ch: int,
-        out_ch: int = 192,
-        res_ch: int = 768,
-        stride: int = 16,
+            self,
+            in_ch: int,
+            out_ch: int = 192,
+            res_ch: int = 768,
+            stride: int = 16,
     ) -> None:
         super().__init__()
 
@@ -455,15 +454,15 @@ class MaskConditionDecoder(nn.Module):
     """
 
     def __init__(
-        self,
-        in_channels: int = 3,
-        out_channels: int = 3,
-        up_block_types: Tuple[str, ...] = ("UpDecoderBlock2D",),
-        block_out_channels: Tuple[int, ...] = (64,),
-        layers_per_block: int = 2,
-        norm_num_groups: int = 32,
-        act_fn: str = "silu",
-        norm_type: str = "group",  # group, spatial
+            self,
+            in_channels: int = 3,
+            out_channels: int = 3,
+            up_block_types: Tuple[str, ...] = ("UpDecoderBlock2D",),
+            block_out_channels: Tuple[int, ...] = (64,),
+            layers_per_block: int = 2,
+            norm_num_groups: int = 32,
+            act_fn: str = "silu",
+            norm_type: str = "group",  # group, spatial
     ):
         super().__init__()
         self.layers_per_block = layers_per_block
@@ -537,11 +536,11 @@ class MaskConditionDecoder(nn.Module):
         self.gradient_checkpointing = False
 
     def forward(
-        self,
-        z: torch.FloatTensor,
-        image: Optional[torch.FloatTensor] = None,
-        mask: Optional[torch.FloatTensor] = None,
-        latent_embeds: Optional[torch.FloatTensor] = None,
+            self,
+            z: torch.FloatTensor,
+            image: Optional[torch.FloatTensor] = None,
+            mask: Optional[torch.FloatTensor] = None,
+            latent_embeds: Optional[torch.FloatTensor] = None,
     ) -> torch.FloatTensor:
         r"""The forward method of the `MaskConditionDecoder` class."""
         sample = z
@@ -656,14 +655,14 @@ class VectorQuantizer(nn.Module):
     # backwards compatibility we use the buggy version by default, but you can
     # specify legacy=False to fix it.
     def __init__(
-        self,
-        n_e: int,
-        vq_embed_dim: int,
-        beta: float,
-        remap=None,
-        unknown_index: str = "random",
-        sane_index_shape: bool = False,
-        legacy: bool = True,
+            self,
+            n_e: int,
+            vq_embed_dim: int,
+            beta: float,
+            remap=None,
+            unknown_index: str = "random",
+            sane_index_shape: bool = False,
+            legacy: bool = True,
     ):
         super().__init__()
         self.n_e = n_e
@@ -843,12 +842,12 @@ class EncoderTiny(nn.Module):
     """
 
     def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        num_blocks: Tuple[int, ...],
-        block_out_channels: Tuple[int, ...],
-        act_fn: str,
+            self,
+            in_channels: int,
+            out_channels: int,
+            num_blocks: Tuple[int, ...],
+            block_out_channels: Tuple[int, ...],
+            act_fn: str,
     ):
         super().__init__()
 
@@ -921,13 +920,13 @@ class DecoderTiny(nn.Module):
     """
 
     def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        num_blocks: Tuple[int, ...],
-        block_out_channels: Tuple[int, ...],
-        upsampling_scaling_factor: int,
-        act_fn: str,
+            self,
+            in_channels: int,
+            out_channels: int,
+            num_blocks: Tuple[int, ...],
+            block_out_channels: Tuple[int, ...],
+            upsampling_scaling_factor: int,
+            act_fn: str,
     ):
         super().__init__()
 

@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class AdaLayerNorm(nn.Module):
     def __init__(self, embedding_dim: int, time_embedding_dim: int = None):
         super().__init__()
@@ -18,7 +19,7 @@ class AdaLayerNorm(nn.Module):
         self.norm = nn.LayerNorm(embedding_dim, elementwise_affine=False, eps=1e-6)
 
     def forward(
-        self, x: torch.Tensor, timestep_embedding: torch.Tensor
+            self, x: torch.Tensor, timestep_embedding: torch.Tensor
     ):
         emb = self.linear(self.silu(timestep_embedding))
         shift, scale = emb.view(len(x), 1, -1).chunk(2, dim=-1)
@@ -32,19 +33,19 @@ class AttnProcessor(nn.Module):
     """
 
     def __init__(
-        self,
-        hidden_size=None,
-        cross_attention_dim=None,
+            self,
+            hidden_size=None,
+            cross_attention_dim=None,
     ):
         super().__init__()
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        attention_mask=None,
-        temb=None,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            attention_mask=None,
+            temb=None,
     ):
         residual = hidden_states
 
@@ -125,12 +126,12 @@ class IPAttnProcessor(nn.Module):
         self.to_v_ip = nn.Linear(cross_attention_dim or hidden_size, hidden_size, bias=False)
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        attention_mask=None,
-        temb=None,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            attention_mask=None,
+            temb=None,
     ):
         residual = hidden_states
 
@@ -234,12 +235,12 @@ class TA_IPAttnProcessor(nn.Module):
         self.ln_v_ip = AdaLayerNorm(hidden_size, time_embedding_dim)
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        attention_mask=None,
-        temb=None,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            attention_mask=None,
+            temb=None,
     ):
         assert temb is not None, "Timestep embedding is needed for a time-aware attention processor."
 
@@ -326,22 +327,22 @@ class AttnProcessor2_0(torch.nn.Module):
     """
 
     def __init__(
-        self,
-        hidden_size=None,
-        cross_attention_dim=None,
+            self,
+            hidden_size=None,
+            cross_attention_dim=None,
     ):
         super().__init__()
         if not hasattr(F, "scaled_dot_product_attention"):
             raise ImportError("AttnProcessor2_0 requires PyTorch 2.0, to use it, please upgrade PyTorch to 2.0.")
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        attention_mask=None,
-        external_kv=None,
-        temb=None,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            attention_mask=None,
+            external_kv=None,
+            temb=None,
     ):
         residual = hidden_states
 
@@ -420,25 +421,25 @@ class split_AttnProcessor2_0(torch.nn.Module):
     """
 
     def __init__(
-        self,
-        hidden_size=None,
-        cross_attention_dim=None,
-        time_embedding_dim=None,
+            self,
+            hidden_size=None,
+            cross_attention_dim=None,
+            time_embedding_dim=None,
     ):
         super().__init__()
         if not hasattr(F, "scaled_dot_product_attention"):
             raise ImportError("AttnProcessor2_0 requires PyTorch 2.0, to use it, please upgrade PyTorch to 2.0.")
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        attention_mask=None,
-        external_kv=None,
-        temb=None,
-        cat_dim=-2,
-        original_shape=None,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            attention_mask=None,
+            external_kv=None,
+            temb=None,
+            cat_dim=-2,
+            original_shape=None,
     ):
         residual = hidden_states
 
@@ -450,20 +451,20 @@ class split_AttnProcessor2_0(torch.nn.Module):
         if input_ndim == 4:
             # 2d to sequence.
             height, width = hidden_states.shape[-2:]
-            if cat_dim==-2 or cat_dim==2:
-                hidden_states_0 = hidden_states[:, :, :height//2, :]
-                hidden_states_1 = hidden_states[:, :, -(height//2):, :]
-            elif cat_dim==-1 or cat_dim==3:
-                hidden_states_0 = hidden_states[:, :, :, :width//2]
-                hidden_states_1 = hidden_states[:, :, :, -(width//2):]
+            if cat_dim == -2 or cat_dim == 2:
+                hidden_states_0 = hidden_states[:, :, :height // 2, :]
+                hidden_states_1 = hidden_states[:, :, -(height // 2):, :]
+            elif cat_dim == -1 or cat_dim == 3:
+                hidden_states_0 = hidden_states[:, :, :, :width // 2]
+                hidden_states_1 = hidden_states[:, :, :, -(width // 2):]
             batch_size, channel, height, width = hidden_states_0.shape
             hidden_states_0 = hidden_states_0.view(batch_size, channel, height * width).transpose(1, 2)
             hidden_states_1 = hidden_states_1.view(batch_size, channel, height * width).transpose(1, 2)
         else:
             # directly split sqeuence according to concat dim.
-            single_dim = original_shape[2] if cat_dim==-2 or cat_dim==2 else original_shape[1]
-            hidden_states_0 = hidden_states[:, :single_dim*single_dim,:]
-            hidden_states_1 = hidden_states[:, single_dim*(single_dim+1):,:]
+            single_dim = original_shape[2] if cat_dim == -2 or cat_dim == 2 else original_shape[1]
+            hidden_states_0 = hidden_states[:, :single_dim * single_dim, :]
+            hidden_states_1 = hidden_states[:, single_dim * (single_dim + 1):, :]
 
         hidden_states = torch.cat([hidden_states_0, hidden_states_1], dim=1)
         batch_size, sequence_length, _ = (
@@ -516,9 +517,9 @@ class split_AttnProcessor2_0(torch.nn.Module):
             hidden_states_0 = hidden_states_0.transpose(-1, -2).reshape(batch_size, channel, height, width)
             hidden_states_1 = hidden_states_1.transpose(-1, -2).reshape(batch_size, channel, height, width)
 
-            if cat_dim==-2 or cat_dim==2:
+            if cat_dim == -2 or cat_dim == 2:
                 hidden_states_pad = torch.zeros(batch_size, channel, 1, width)
-            elif cat_dim==-1 or cat_dim==3:
+            elif cat_dim == -1 or cat_dim == 3:
                 hidden_states_pad = torch.zeros(batch_size, channel, height, 1)
             hidden_states_pad = hidden_states_pad.to(hidden_states_0.device, dtype=hidden_states_0.dtype)
             hidden_states = torch.cat([hidden_states_0, hidden_states_pad, hidden_states_1], dim=cat_dim)
@@ -544,10 +545,10 @@ class sep_split_AttnProcessor2_0(torch.nn.Module):
     """
 
     def __init__(
-        self,
-        hidden_size=None,
-        cross_attention_dim=None,
-        time_embedding_dim=None,
+            self,
+            hidden_size=None,
+            cross_attention_dim=None,
+            time_embedding_dim=None,
     ):
         super().__init__()
         if not hasattr(F, "scaled_dot_product_attention"):
@@ -564,16 +565,16 @@ class sep_split_AttnProcessor2_0(torch.nn.Module):
         # self.to_v_ref = nn.Linear(cross_attention_dim or hidden_size, hidden_size, bias=False)
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        attention_mask=None,
-        external_kv=None,
-        temb=None,
-        cat_dim=-2,
-        original_shape=None,
-        ref_scale=1.0,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            attention_mask=None,
+            external_kv=None,
+            temb=None,
+            cat_dim=-2,
+            original_shape=None,
+            ref_scale=1.0,
     ):
         residual = hidden_states
 
@@ -585,20 +586,20 @@ class sep_split_AttnProcessor2_0(torch.nn.Module):
         if input_ndim == 4:
             # 2d to sequence.
             height, width = hidden_states.shape[-2:]
-            if cat_dim==-2 or cat_dim==2:
-                hidden_states_0 = hidden_states[:, :, :height//2, :]
-                hidden_states_1 = hidden_states[:, :, -(height//2):, :]
-            elif cat_dim==-1 or cat_dim==3:
-                hidden_states_0 = hidden_states[:, :, :, :width//2]
-                hidden_states_1 = hidden_states[:, :, :, -(width//2):]
+            if cat_dim == -2 or cat_dim == 2:
+                hidden_states_0 = hidden_states[:, :, :height // 2, :]
+                hidden_states_1 = hidden_states[:, :, -(height // 2):, :]
+            elif cat_dim == -1 or cat_dim == 3:
+                hidden_states_0 = hidden_states[:, :, :, :width // 2]
+                hidden_states_1 = hidden_states[:, :, :, -(width // 2):]
             batch_size, channel, height, width = hidden_states_0.shape
             hidden_states_0 = hidden_states_0.view(batch_size, channel, height * width).transpose(1, 2)
             hidden_states_1 = hidden_states_1.view(batch_size, channel, height * width).transpose(1, 2)
         else:
             # directly split sqeuence according to concat dim.
-            single_dim = original_shape[2] if cat_dim==-2 or cat_dim==2 else original_shape[1]
-            hidden_states_0 = hidden_states[:, :single_dim*single_dim,:]
-            hidden_states_1 = hidden_states[:, single_dim*(single_dim+1):,:]
+            single_dim = original_shape[2] if cat_dim == -2 or cat_dim == 2 else original_shape[1]
+            hidden_states_0 = hidden_states[:, :single_dim * single_dim, :]
+            hidden_states_1 = hidden_states[:, single_dim * (single_dim + 1):, :]
 
         batch_size, sequence_length, _ = (
             hidden_states_0.shape if encoder_hidden_states is None else encoder_hidden_states.shape
@@ -665,7 +666,6 @@ class sep_split_AttnProcessor2_0(torch.nn.Module):
         hidden_states_0 = hidden_states_0.to(query_0.dtype)
         hidden_states_1 = hidden_states_1.to(query_1.dtype)
 
-
         # linear proj
         hidden_states_0 = attn.to_out[0](hidden_states_0)
         hidden_states_1 = attn.to_out[0](hidden_states_1)
@@ -673,14 +673,13 @@ class sep_split_AttnProcessor2_0(torch.nn.Module):
         hidden_states_0 = attn.to_out[1](hidden_states_0)
         hidden_states_1 = attn.to_out[1](hidden_states_1)
 
-
         if input_ndim == 4:
             hidden_states_0 = hidden_states_0.transpose(-1, -2).reshape(batch_size, channel, height, width)
             hidden_states_1 = hidden_states_1.transpose(-1, -2).reshape(batch_size, channel, height, width)
 
-            if cat_dim==-2 or cat_dim==2:
+            if cat_dim == -2 or cat_dim == 2:
                 hidden_states_pad = torch.zeros(batch_size, channel, 1, width)
-            elif cat_dim==-1 or cat_dim==3:
+            elif cat_dim == -1 or cat_dim == 3:
                 hidden_states_pad = torch.zeros(batch_size, channel, height, 1)
             hidden_states_pad = hidden_states_pad.to(hidden_states_0.device, dtype=hidden_states_0.dtype)
             hidden_states = torch.cat([hidden_states_0, hidden_states_pad, hidden_states_1], dim=cat_dim)
@@ -706,11 +705,11 @@ class AdditiveKV_AttnProcessor2_0(torch.nn.Module):
     """
 
     def __init__(
-        self,
-        hidden_size: int = None,
-        cross_attention_dim: int = None,
-        time_embedding_dim: int = None,
-        additive_scale: float = 1.0,
+            self,
+            hidden_size: int = None,
+            cross_attention_dim: int = None,
+            time_embedding_dim: int = None,
+            additive_scale: float = 1.0,
     ):
         super().__init__()
         if not hasattr(F, "scaled_dot_product_attention"):
@@ -718,16 +717,16 @@ class AdditiveKV_AttnProcessor2_0(torch.nn.Module):
         self.additive_scale = additive_scale
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        external_kv=None,
-        attention_mask=None,
-        temb=None,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            external_kv=None,
+            attention_mask=None,
+            temb=None,
     ):
         assert temb is not None, "Timestep embedding is needed for a time-aware attention processor."
-        
+
         residual = hidden_states
 
         if attn.spatial_norm is not None:
@@ -816,11 +815,11 @@ class TA_AdditiveKV_AttnProcessor2_0(torch.nn.Module):
     """
 
     def __init__(
-        self,
-        hidden_size: int = None,
-        cross_attention_dim: int = None,
-        time_embedding_dim: int = None,
-        additive_scale: float = 1.0,
+            self,
+            hidden_size: int = None,
+            cross_attention_dim: int = None,
+            time_embedding_dim: int = None,
+            additive_scale: float = 1.0,
     ):
         super().__init__()
         if not hasattr(F, "scaled_dot_product_attention"):
@@ -830,16 +829,16 @@ class TA_AdditiveKV_AttnProcessor2_0(torch.nn.Module):
         self.additive_scale = additive_scale
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        external_kv=None,
-        attention_mask=None,
-        temb=None,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            external_kv=None,
+            attention_mask=None,
+            temb=None,
     ):
         assert temb is not None, "Timestep embedding is needed for a time-aware attention processor."
-        
+
         residual = hidden_states
 
         if attn.spatial_norm is not None:
@@ -955,12 +954,12 @@ class IPAttnProcessor2_0(torch.nn.Module):
         self.to_v_ip = nn.Linear(cross_attention_dim or hidden_size, hidden_size, bias=False)
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        attention_mask=None,
-        temb=None,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            attention_mask=None,
+            temb=None,
     ):
         residual = hidden_states
 
@@ -1091,13 +1090,13 @@ class TA_IPAttnProcessor2_0(torch.nn.Module):
         self.ln_v_ip = AdaLayerNorm(hidden_size, time_embedding_dim)
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        attention_mask=None,
-        external_kv=None,
-        temb=None,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            attention_mask=None,
+            external_kv=None,
+            temb=None,
     ):
         assert temb is not None, "Timestep embedding is needed for a time-aware attention processor."
 
@@ -1172,7 +1171,7 @@ class TA_IPAttnProcessor2_0(torch.nn.Module):
         # for ip-adapter
         ip_key = self.to_k_ip(ip_hidden_states)
         ip_value = self.to_v_ip(ip_hidden_states)
-        
+
         # time-dependent adaLN
         ip_key = self.ln_k_ip(ip_key, temb)
         ip_value = self.ln_v_ip(ip_value, temb)
@@ -1284,12 +1283,12 @@ class CNAttnProcessor2_0:
         self.num_tokens = num_tokens
 
     def __call__(
-        self,
-        attn,
-        hidden_states,
-        encoder_hidden_states=None,
-        attention_mask=None,
-        temb=None,
+            self,
+            attn,
+            hidden_states,
+            encoder_hidden_states=None,
+            attention_mask=None,
+            temb=None,
     ):
         residual = hidden_states
 
@@ -1397,11 +1396,11 @@ def init_attn_proc(unet, ip_adapter_tokens=16, use_lcm=False, use_adaln=True, us
                         "to_v_ip.weight": unet_sd[layer_name + ".to_v.weight"],
                     }
                 attn_procs[name] = TA_IPAttnProcessor2_0(
-                        hidden_size=hidden_size,
-                        cross_attention_dim=cross_attention_dim,
-                        num_tokens=ip_adapter_tokens,
-                        time_embedding_dim=1280,
-                    ) if hasattr(F, "scaled_dot_product_attention") else \
+                    hidden_size=hidden_size,
+                    cross_attention_dim=cross_attention_dim,
+                    num_tokens=ip_adapter_tokens,
+                    time_embedding_dim=1280,
+                ) if hasattr(F, "scaled_dot_product_attention") else \
                     TA_IPAttnProcessor(
                         hidden_size=hidden_size,
                         cross_attention_dim=cross_attention_dim,

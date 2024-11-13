@@ -2,12 +2,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-from torch import nn
-from torch.nn import functional as F
-
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.loaders.single_file_model import FromOriginalModelMixin
-from diffusers.utils import BaseOutput, logging
 from diffusers.models.attention_processor import (
     ADDED_KV_ATTENTION_PROCESSORS,
     CROSS_ATTENTION_PROCESSORS,
@@ -15,7 +11,8 @@ from diffusers.models.attention_processor import (
     AttnAddedKVProcessor,
     AttnProcessor,
 )
-from diffusers.models.embeddings import TextImageProjection, TextImageTimeEmbedding, TextTimeEmbedding, TimestepEmbedding, Timesteps
+from diffusers.models.embeddings import TextImageProjection, TextImageTimeEmbedding, TextTimeEmbedding, \
+    TimestepEmbedding, Timesteps
 from diffusers.models.modeling_utils import ModelMixin
 from diffusers.models.unets.unet_2d_blocks import (
     CrossAttnDownBlock2D,
@@ -25,7 +22,9 @@ from diffusers.models.unets.unet_2d_blocks import (
     get_down_block,
 )
 from diffusers.models.unets.unet_2d_condition import UNet2DConditionModel
-
+from diffusers.utils import BaseOutput, logging
+from torch import nn
+from torch.nn import functional as F
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
@@ -33,7 +32,7 @@ logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 class ZeroConv(nn.Module):
     def __init__(self, label_nc, norm_nc, mask=False):
         super().__init__()
-        self.zero_conv = zero_module(nn.Conv2d(label_nc+norm_nc, norm_nc, 1, 1, 0))
+        self.zero_conv = zero_module(nn.Conv2d(label_nc + norm_nc, norm_nc, 1, 1, 0))
         self.mask = mask
 
     def forward(self, hidden_states, h_ori=None):
@@ -68,7 +67,6 @@ class SFT(nn.Module):
         self.add = nn.Conv2d(nhidden, norm_nc, kernel_size=ks, padding=pw)
 
     def forward(self, hidden_states, mask=False):
-        
         c, h = hidden_states
         mask = mask or self.mask
         assert mask is False
@@ -121,10 +119,10 @@ class ConditioningEmbedding(nn.Module):
     """
 
     def __init__(
-        self,
-        conditioning_embedding_channels: int,
-        conditioning_channels: int = 3,
-        block_out_channels: Tuple[int, ...] = (16, 32, 96, 256),
+            self,
+            conditioning_embedding_channels: int,
+            conditioning_channels: int = 3,
+            block_out_channels: Tuple[int, ...] = (16, 32, 96, 256),
     ):
         super().__init__()
 
@@ -228,45 +226,45 @@ class Aggregator(ModelMixin, ConfigMixin, FromOriginalModelMixin):
 
     @register_to_config
     def __init__(
-        self,
-        in_channels: int = 4,
-        conditioning_channels: int = 3,
-        flip_sin_to_cos: bool = True,
-        freq_shift: int = 0,
-        down_block_types: Tuple[str, ...] = (
-            "CrossAttnDownBlock2D",
-            "CrossAttnDownBlock2D",
-            "CrossAttnDownBlock2D",
-            "DownBlock2D",
-        ),
-        mid_block_type: Optional[str] = "UNetMidBlock2DCrossAttn",
-        only_cross_attention: Union[bool, Tuple[bool]] = False,
-        block_out_channels: Tuple[int, ...] = (320, 640, 1280, 1280),
-        layers_per_block: int = 2,
-        downsample_padding: int = 1,
-        mid_block_scale_factor: float = 1,
-        act_fn: str = "silu",
-        norm_num_groups: Optional[int] = 32,
-        norm_eps: float = 1e-5,
-        cross_attention_dim: int = 1280,
-        transformer_layers_per_block: Union[int, Tuple[int, ...]] = 1,
-        encoder_hid_dim: Optional[int] = None,
-        encoder_hid_dim_type: Optional[str] = None,
-        attention_head_dim: Union[int, Tuple[int, ...]] = 8,
-        num_attention_heads: Optional[Union[int, Tuple[int, ...]]] = None,
-        use_linear_projection: bool = False,
-        class_embed_type: Optional[str] = None,
-        addition_embed_type: Optional[str] = None,
-        addition_time_embed_dim: Optional[int] = None,
-        num_class_embeds: Optional[int] = None,
-        upcast_attention: bool = False,
-        resnet_time_scale_shift: str = "default",
-        projection_class_embeddings_input_dim: Optional[int] = None,
-        controlnet_conditioning_channel_order: str = "rgb",
-        conditioning_embedding_out_channels: Optional[Tuple[int, ...]] = (16, 32, 96, 256),
-        global_pool_conditions: bool = False,
-        addition_embed_type_num_heads: int = 64,
-        pad_concat: bool = False,
+            self,
+            in_channels: int = 4,
+            conditioning_channels: int = 3,
+            flip_sin_to_cos: bool = True,
+            freq_shift: int = 0,
+            down_block_types: Tuple[str, ...] = (
+                    "CrossAttnDownBlock2D",
+                    "CrossAttnDownBlock2D",
+                    "CrossAttnDownBlock2D",
+                    "DownBlock2D",
+            ),
+            mid_block_type: Optional[str] = "UNetMidBlock2DCrossAttn",
+            only_cross_attention: Union[bool, Tuple[bool]] = False,
+            block_out_channels: Tuple[int, ...] = (320, 640, 1280, 1280),
+            layers_per_block: int = 2,
+            downsample_padding: int = 1,
+            mid_block_scale_factor: float = 1,
+            act_fn: str = "silu",
+            norm_num_groups: Optional[int] = 32,
+            norm_eps: float = 1e-5,
+            cross_attention_dim: int = 1280,
+            transformer_layers_per_block: Union[int, Tuple[int, ...]] = 1,
+            encoder_hid_dim: Optional[int] = None,
+            encoder_hid_dim_type: Optional[str] = None,
+            attention_head_dim: Union[int, Tuple[int, ...]] = 8,
+            num_attention_heads: Optional[Union[int, Tuple[int, ...]]] = None,
+            use_linear_projection: bool = False,
+            class_embed_type: Optional[str] = None,
+            addition_embed_type: Optional[str] = None,
+            addition_time_embed_dim: Optional[int] = None,
+            num_class_embeds: Optional[int] = None,
+            upcast_attention: bool = False,
+            resnet_time_scale_shift: str = "default",
+            projection_class_embeddings_input_dim: Optional[int] = None,
+            controlnet_conditioning_channel_order: str = "rgb",
+            conditioning_embedding_out_channels: Optional[Tuple[int, ...]] = (16, 32, 96, 256),
+            global_pool_conditions: bool = False,
+            addition_embed_type_num_heads: int = 64,
+            pad_concat: bool = False,
     ):
         super().__init__()
 
@@ -502,12 +500,12 @@ class Aggregator(ModelMixin, ConfigMixin, FromOriginalModelMixin):
 
     @classmethod
     def from_unet(
-        cls,
-        unet: UNet2DConditionModel,
-        controlnet_conditioning_channel_order: str = "rgb",
-        conditioning_embedding_out_channels: Optional[Tuple[int, ...]] = (16, 32, 96, 256),
-        load_weights_from_unet: bool = True,
-        conditioning_channels: int = 3,
+            cls,
+            unet: UNet2DConditionModel,
+            controlnet_conditioning_channel_order: str = "rgb",
+            conditioning_embedding_out_channels: Optional[Tuple[int, ...]] = (16, 32, 96, 256),
+            load_weights_from_unet: bool = True,
+            conditioning_channels: int = 3,
     ):
         r"""
         Instantiate a [`ControlNetModel`] from [`UNet2DConditionModel`].
@@ -720,7 +718,7 @@ class Aggregator(ModelMixin, ConfigMixin, FromOriginalModelMixin):
             fn_recursive_set_attention_slice(module, reversed_slice_size)
 
     def process_encoder_hidden_states(
-        self, encoder_hidden_states: torch.Tensor, added_cond_kwargs: Dict[str, Any]
+            self, encoder_hidden_states: torch.Tensor, added_cond_kwargs: Dict[str, Any]
     ) -> torch.Tensor:
         if self.encoder_hid_proj is not None and self.config.encoder_hid_dim_type == "text_proj":
             encoder_hidden_states = self.encoder_hid_proj(encoder_hidden_states)
@@ -750,25 +748,25 @@ class Aggregator(ModelMixin, ConfigMixin, FromOriginalModelMixin):
             image_embeds = self.encoder_hid_proj(image_embeds)
             encoder_hidden_states = (encoder_hidden_states, image_embeds)
         return encoder_hidden_states
-    
+
     def _set_gradient_checkpointing(self, module, value: bool = False) -> None:
         if isinstance(module, (CrossAttnDownBlock2D, DownBlock2D)):
             module.gradient_checkpointing = value
 
     def forward(
-        self,
-        sample: torch.FloatTensor,
-        timestep: Union[torch.Tensor, float, int],
-        encoder_hidden_states: torch.Tensor,
-        controlnet_cond: torch.FloatTensor,
-        cat_dim: int = -2,
-        conditioning_scale: float = 1.0,
-        class_labels: Optional[torch.Tensor] = None,
-        timestep_cond: Optional[torch.Tensor] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        added_cond_kwargs: Optional[Dict[str, torch.Tensor]] = None,
-        cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-        return_dict: bool = True,
+            self,
+            sample: torch.FloatTensor,
+            timestep: Union[torch.Tensor, float, int],
+            encoder_hidden_states: torch.Tensor,
+            controlnet_cond: torch.FloatTensor,
+            cat_dim: int = -2,
+            conditioning_scale: float = 1.0,
+            class_labels: Optional[torch.Tensor] = None,
+            timestep_cond: Optional[torch.Tensor] = None,
+            attention_mask: Optional[torch.Tensor] = None,
+            added_cond_kwargs: Optional[Dict[str, torch.Tensor]] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+            return_dict: bool = True,
     ) -> Union[AggregatorOutput, Tuple[Tuple[torch.FloatTensor, ...], torch.FloatTensor]]:
         """
         The [`Aggregator`] forward method.
@@ -895,7 +893,8 @@ class Aggregator(ModelMixin, ConfigMixin, FromOriginalModelMixin):
             elif cat_dim == -1 or cat_dim == 3:
                 concat_pad = torch.zeros(batch_size, channel, height, 1)
             else:
-                raise ValueError(f"Aggregator shall concat along spatial dimension, but is asked to concat dim: {cat_dim}.")
+                raise ValueError(
+                    f"Aggregator shall concat along spatial dimension, but is asked to concat dim: {cat_dim}.")
             concat_pad = concat_pad.to(cond_latent.device, dtype=cond_latent.dtype)
             sample = torch.cat([cond_latent, concat_pad, ref_latent], dim=cat_dim)
         else:
@@ -914,12 +913,12 @@ class Aggregator(ModelMixin, ConfigMixin, FromOriginalModelMixin):
             if self.pad_concat:
                 batch_size, channel, height, width = sample.shape
                 if cat_dim == -2 or cat_dim == 2:
-                    cond_latent = sample[:, :, :height//2, :]
-                    ref_latent = sample[:, :, -(height//2):, :]
+                    cond_latent = sample[:, :, :height // 2, :]
+                    ref_latent = sample[:, :, -(height // 2):, :]
                     concat_pad = torch.zeros(batch_size, channel, 1, width)
                 elif cat_dim == -1 or cat_dim == 3:
-                    cond_latent = sample[:, :, :, :width//2]
-                    ref_latent = sample[:, :, :, -(width//2):]
+                    cond_latent = sample[:, :, :, :width // 2]
+                    ref_latent = sample[:, :, :, -(width // 2):]
                     concat_pad = torch.zeros(batch_size, channel, height, 1)
                 concat_pad = concat_pad.to(cond_latent.device, dtype=cond_latent.dtype)
                 sample = torch.cat([cond_latent, concat_pad, ref_latent], dim=cat_dim)
@@ -940,11 +939,11 @@ class Aggregator(ModelMixin, ConfigMixin, FromOriginalModelMixin):
         for down_block_res_sample, controlnet_block in zip(down_block_res_samples, self.controlnet_down_blocks):
             batch_size, channel, height, width = down_block_res_sample.shape
             if cat_dim == -2 or cat_dim == 2:
-                cond_latent = down_block_res_sample[:, :, :height//2, :]
-                ref_latent = down_block_res_sample[:, :, -(height//2):, :]
+                cond_latent = down_block_res_sample[:, :, :height // 2, :]
+                ref_latent = down_block_res_sample[:, :, -(height // 2):, :]
             elif cat_dim == -1 or cat_dim == 3:
-                cond_latent = down_block_res_sample[:, :, :, :width//2]
-                ref_latent = down_block_res_sample[:, :, :, -(width//2):]
+                cond_latent = down_block_res_sample[:, :, :, :width // 2]
+                ref_latent = down_block_res_sample[:, :, :, -(width // 2):]
             down_block_res_sample = controlnet_block((cond_latent, ref_latent), )
             controlnet_down_block_res_samples = controlnet_down_block_res_samples + (down_block_res_sample,)
 
@@ -952,16 +951,16 @@ class Aggregator(ModelMixin, ConfigMixin, FromOriginalModelMixin):
 
         batch_size, channel, height, width = sample.shape
         if cat_dim == -2 or cat_dim == 2:
-            cond_latent = sample[:, :, :height//2, :]
-            ref_latent = sample[:, :, -(height//2):, :]
+            cond_latent = sample[:, :, :height // 2, :]
+            ref_latent = sample[:, :, -(height // 2):, :]
         elif cat_dim == -1 or cat_dim == 3:
-            cond_latent = sample[:, :, :, :width//2]
-            ref_latent = sample[:, :, :, -(width//2):]
+            cond_latent = sample[:, :, :, :width // 2]
+            ref_latent = sample[:, :, :, -(width // 2):]
         mid_block_res_sample = self.controlnet_mid_block((cond_latent, ref_latent), )
 
         # 6. scaling
-        down_block_res_samples = [sample*conditioning_scale for sample in down_block_res_samples]
-        mid_block_res_sample = mid_block_res_sample*conditioning_scale
+        down_block_res_samples = [sample * conditioning_scale for sample in down_block_res_samples]
+        mid_block_res_sample = mid_block_res_sample * conditioning_scale
 
         if self.config.global_pool_conditions:
             down_block_res_samples = [

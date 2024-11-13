@@ -21,12 +21,9 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-
 from diffusers.configuration_utils import ConfigMixin, register_to_config
-from diffusers.utils import BaseOutput, logging
-from diffusers.utils.torch_utils import randn_tensor
 from diffusers.schedulers.scheduling_utils import SchedulerMixin
-
+from diffusers.utils import BaseOutput, logging
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
@@ -47,9 +44,9 @@ class LCMSingleStepSchedulerOutput(BaseOutput):
 
 # Copied from diffusers.schedulers.scheduling_ddpm.betas_for_alpha_bar
 def betas_for_alpha_bar(
-    num_diffusion_timesteps,
-    max_beta=0.999,
-    alpha_transform_type="cosine",
+        num_diffusion_timesteps,
+        max_beta=0.999,
+        alpha_transform_type="cosine",
 ):
     """
     Create a beta schedule that discretizes the given alpha_t_bar function, which defines the cumulative product of
@@ -119,7 +116,7 @@ def rescale_zero_terminal_snr(betas: torch.FloatTensor) -> torch.FloatTensor:
     alphas_bar_sqrt *= alphas_bar_sqrt_0 / (alphas_bar_sqrt_0 - alphas_bar_sqrt_T)
 
     # Convert alphas_bar_sqrt to betas
-    alphas_bar = alphas_bar_sqrt**2  # Revert sqrt
+    alphas_bar = alphas_bar_sqrt ** 2  # Revert sqrt
     alphas = alphas_bar[1:] / alphas_bar[:-1]  # Revert cumprod
     alphas = torch.cat([alphas_bar[0:1], alphas])
     betas = 1 - alphas
@@ -192,24 +189,24 @@ class LCMSingleStepScheduler(SchedulerMixin, ConfigMixin):
 
     @register_to_config
     def __init__(
-        self,
-        num_train_timesteps: int = 1000,
-        beta_start: float = 0.00085,
-        beta_end: float = 0.012,
-        beta_schedule: str = "scaled_linear",
-        trained_betas: Optional[Union[np.ndarray, List[float]]] = None,
-        original_inference_steps: int = 50,
-        clip_sample: bool = False,
-        clip_sample_range: float = 1.0,
-        set_alpha_to_one: bool = True,
-        steps_offset: int = 0,
-        prediction_type: str = "epsilon",
-        thresholding: bool = False,
-        dynamic_thresholding_ratio: float = 0.995,
-        sample_max_value: float = 1.0,
-        timestep_spacing: str = "leading",
-        timestep_scaling: float = 10.0,
-        rescale_betas_zero_snr: bool = False,
+            self,
+            num_train_timesteps: int = 1000,
+            beta_start: float = 0.00085,
+            beta_end: float = 0.012,
+            beta_schedule: str = "scaled_linear",
+            trained_betas: Optional[Union[np.ndarray, List[float]]] = None,
+            original_inference_steps: int = 50,
+            clip_sample: bool = False,
+            clip_sample_range: float = 1.0,
+            set_alpha_to_one: bool = True,
+            steps_offset: int = 0,
+            prediction_type: str = "epsilon",
+            thresholding: bool = False,
+            dynamic_thresholding_ratio: float = 0.995,
+            sample_max_value: float = 1.0,
+            timestep_spacing: str = "leading",
+            timestep_scaling: float = 10.0,
+            rescale_betas_zero_snr: bool = False,
     ):
         if trained_betas is not None:
             self.betas = torch.tensor(trained_betas, dtype=torch.float32)
@@ -218,7 +215,7 @@ class LCMSingleStepScheduler(SchedulerMixin, ConfigMixin):
         elif beta_schedule == "scaled_linear":
             # this schedule is very specific to the latent diffusion model.
             self.betas = (
-                torch.linspace(beta_start**0.5, beta_end**0.5, num_train_timesteps, dtype=torch.float32) ** 2
+                    torch.linspace(beta_start ** 0.5, beta_end ** 0.5, num_train_timesteps, dtype=torch.float32) ** 2
             )
         elif beta_schedule == "squaredcos_cap_v2":
             # Glide cosine schedule
@@ -321,12 +318,12 @@ class LCMSingleStepScheduler(SchedulerMixin, ConfigMixin):
         return sample
 
     def set_timesteps(
-        self,
-        num_inference_steps: int = None,
-        device: Union[str, torch.device] = None,
-        original_inference_steps: Optional[int] = None,
-        strength: int = 1.0,
-        timesteps: Optional[list] = None,
+            self,
+            num_inference_steps: int = None,
+            device: Union[str, torch.device] = None,
+            original_inference_steps: Optional[int] = None,
+            strength: int = 1.0,
+            timesteps: Optional[list] = None,
     ):
         """
         Sets the discrete timesteps used for the diffusion chain (to be run before inference).
@@ -402,8 +399,8 @@ class LCMSingleStepScheduler(SchedulerMixin, ConfigMixin):
         self.sigma_data = 0.5  # Default: 0.5
         scaled_timestep = timestep * self.config.timestep_scaling
 
-        c_skip = self.sigma_data**2 / (scaled_timestep**2 + self.sigma_data**2)
-        c_out = scaled_timestep / (scaled_timestep**2 + self.sigma_data**2) ** 0.5
+        c_skip = self.sigma_data ** 2 / (scaled_timestep ** 2 + self.sigma_data ** 2)
+        c_out = scaled_timestep / (scaled_timestep ** 2 + self.sigma_data ** 2) ** 0.5
         return c_skip, c_out
 
     def append_dims(self, x, target_dims):
@@ -419,12 +416,12 @@ class LCMSingleStepScheduler(SchedulerMixin, ConfigMixin):
         return out.reshape(b, *((1,) * (len(x_shape) - 1)))
 
     def step(
-        self,
-        model_output: torch.FloatTensor,
-        timestep: torch.Tensor,
-        sample: torch.FloatTensor,
-        generator: Optional[torch.Generator] = None,
-        return_dict: bool = True,
+            self,
+            model_output: torch.FloatTensor,
+            timestep: torch.Tensor,
+            sample: torch.FloatTensor,
+            generator: Optional[torch.Generator] = None,
+            return_dict: bool = True,
     ) -> Union[LCMSingleStepSchedulerOutput, Tuple]:
         """
         Predict the sample from the previous timestep by reversing the SDE. This function propagates the diffusion
@@ -484,16 +481,16 @@ class LCMSingleStepScheduler(SchedulerMixin, ConfigMixin):
         denoised = c_out * predicted_original_sample + c_skip * sample
 
         if not return_dict:
-            return (denoised, )
+            return (denoised,)
 
         return LCMSingleStepSchedulerOutput(denoised=denoised)
 
     # Copied from diffusers.schedulers.scheduling_ddpm.DDPMScheduler.add_noise
     def add_noise(
-        self,
-        original_samples: torch.FloatTensor,
-        noise: torch.FloatTensor,
-        timesteps: torch.IntTensor,
+            self,
+            original_samples: torch.FloatTensor,
+            noise: torch.FloatTensor,
+            timesteps: torch.IntTensor,
     ) -> torch.FloatTensor:
         # Make sure alphas_cumprod and timestep have same device and dtype as original_samples
         alphas_cumprod = self.alphas_cumprod.to(device=original_samples.device, dtype=original_samples.dtype)
@@ -514,7 +511,7 @@ class LCMSingleStepScheduler(SchedulerMixin, ConfigMixin):
 
     # Copied from diffusers.schedulers.scheduling_ddpm.DDPMScheduler.get_velocity
     def get_velocity(
-        self, sample: torch.FloatTensor, noise: torch.FloatTensor, timesteps: torch.IntTensor
+            self, sample: torch.FloatTensor, noise: torch.FloatTensor, timesteps: torch.IntTensor
     ) -> torch.FloatTensor:
         # Make sure alphas_cumprod and timestep have same device and dtype as sample
         alphas_cumprod = self.alphas_cumprod.to(device=sample.device, dtype=sample.dtype)

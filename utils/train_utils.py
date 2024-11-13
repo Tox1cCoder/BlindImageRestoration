@@ -1,39 +1,23 @@
-import argparse
-import contextlib
-import time
 import gc
-import logging
-import math
 import os
 import random
-import jsonlines
-import functools
 import shutil
-import pyrallis
-import itertools
-from pathlib import Path
 from collections import namedtuple, OrderedDict
 
-import accelerate
 import numpy as np
 import torch
-import torch.nn.functional as F
 import torch.utils.checkpoint
 import transformers
-from accelerate import Accelerator
-from accelerate.logging import get_logger
-from accelerate.utils import DistributedDataParallelKwargs, ProjectConfiguration, set_seed
 from datasets import load_dataset
 from packaging import version
 from PIL import Image
 from losses.losses import *
 from torchvision import transforms
 from torchvision.transforms.functional import crop
-from tqdm.auto import tqdm
 
 
 def import_model_class_from_model_name_or_path(
-    pretrained_model_name_or_path: str, revision: str, subfolder: str = "text_encoder"
+        pretrained_model_name_or_path: str, revision: str, subfolder: str = "text_encoder"
 ):
     from transformers import PretrainedConfig
     text_encoder_config = PretrainedConfig.from_pretrained(
@@ -51,6 +35,7 @@ def import_model_class_from_model_name_or_path(
         return CLIPTextModelWithProjection
     else:
         raise ValueError(f"{model_class} is not supported.")
+
 
 def get_train_dataset(dataset_name, dataset_dir, args, accelerator):
     # Get the datasets: you can either provide your own training and evaluation files (see below)
@@ -101,8 +86,8 @@ def get_train_dataset(dataset_name, dataset_dir, args, accelerator):
             train_dataset = train_dataset.select(range(args.max_train_samples))
     return train_dataset
 
-def prepare_train_dataset(dataset, accelerator, deg_pipeline, centralize=False):
 
+def prepare_train_dataset(dataset, accelerator, deg_pipeline, centralize=False):
     # Data augmentations.
     hflip = deg_pipeline.augment_opt['use_hflip'] and random.random() < 0.5
     vflip = deg_pipeline.augment_opt['use_rot'] and random.random() < 0.5
@@ -114,8 +99,8 @@ def prepare_train_dataset(dataset, accelerator, deg_pipeline, centralize=False):
         augment_transforms.append(transforms.RandomVerticalFlip(p=1.0))
     if rot90:
         # FIXME
-        augment_transforms.append(transforms.RandomRotation(degrees=(90,90)))
-    torch_transforms=[transforms.ToTensor()]
+        augment_transforms.append(transforms.RandomRotation(degrees=(90, 90)))
+    torch_transforms = [transforms.ToTensor()]
     if centralize:
         # to [-1, 1]
         torch_transforms.append(transforms.Normalize([0.5], [0.5]))
@@ -173,6 +158,7 @@ def prepare_train_dataset(dataset, accelerator, deg_pipeline, centralize=False):
 
     return dataset
 
+
 def collate_fn(examples):
     images = torch.stack([example["images"] for example in examples])
     images = images.to(memory_format=torch.contiguous_format).float()
@@ -198,6 +184,7 @@ def collate_fn(examples):
         "original_sizes": original_sizes,
         "crop_top_lefts": crop_top_lefts,
     }
+
 
 def encode_prompt(prompt_batch, text_encoders, tokenizers, is_train=True):
     prompt_embeds_list = []
@@ -236,14 +223,17 @@ def encode_prompt(prompt_batch, text_encoders, tokenizers, is_train=True):
     pooled_prompt_embeds = pooled_prompt_embeds.view(bs_embed, -1)
     return prompt_embeds, pooled_prompt_embeds
 
+
 def importance_sampling_fn(t, max_t, alpha):
     """Importance Sampling Function f(t)"""
     return 1 / max_t * (1 - alpha * np.cos(np.pi * t / max_t))
+
 
 def extract_into_tensor(a, t, x_shape):
     b, *_ = t.shape
     out = a.gather(-1, t)
     return out.reshape(b, *((1,) * (len(x_shape) - 1)))
+
 
 def tensor_to_pil(images):
     """
@@ -264,6 +254,7 @@ def tensor_to_pil(images):
         pil_images = [Image.fromarray(image[:, :, :3]) for image in images_np]
 
     return pil_images
+
 
 def save_np_to_image(img_np, save_dir):
     img_np = np.transpose(img_np, (0, 2, 3, 1))

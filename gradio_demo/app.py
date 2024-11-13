@@ -38,7 +38,7 @@ def resize_img(input_image, max_side=1280, min_side=1024, size=None,
     return input_image
 
 
-instantir_path = os.environ['INSTANTIR_PATH']
+instantir_path = "./"  # os.environ['INSTANTIR_PATH']
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 sdxl_repo_id = "stabilityai/stable-diffusion-xl-base-1.0"
