@@ -1,7 +1,6 @@
 import argparse
 import os
 
-
 def parse_args(input_args=None):
     parser = argparse.ArgumentParser(description="Train Consistency Encoder.")
     parser.add_argument(
@@ -30,7 +29,7 @@ def parse_args(input_args=None):
         default=None,
         help="Variant of the model files of the pretrained model identifier from huggingface.co/models, 'e.g.' fp16",
     )
-
+    
     # parser.add_argument(
     #     "--instance_data_dir",
     #     type=str,
@@ -57,8 +56,8 @@ def parse_args(input_args=None):
         type=str,
         default="image",
         help="The column of the dataset containing the target image. By "
-             "default, the standard Image Dataset maps out 'file_name' "
-             "to 'image'.",
+        "default, the standard Image Dataset maps out 'file_name' "
+        "to 'image'.",
     )
     parser.add_argument(
         "--caption_column",
@@ -132,36 +131,28 @@ def parse_args(input_args=None):
         help="The output directory where the model predictions and checkpoints will be written.",
     )
 
-    parser.add_argument("--save_only_encoder", action="store_true",
-                        help="Only save the encoder and not the full accelerator state")
+    parser.add_argument("--save_only_encoder", action="store_true", help="Only save the encoder and not the full accelerator state")
 
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
 
     parser.add_argument("--freeze_encoder_unet", action="store_true", help="Don't train encoder unet")
-    parser.add_argument("--predict_word_embedding", action="store_true",
-                        help="Predict word embeddings in addition to KV features")
-    parser.add_argument("--ip_adapter_feature_extractor_path", type=str,
-                        help="Path to pre-trained feature extractor for IP-adapter")
+    parser.add_argument("--predict_word_embedding", action="store_true", help="Predict word embeddings in addition to KV features")
+    parser.add_argument("--ip_adapter_feature_extractor_path", type=str, help="Path to pre-trained feature extractor for IP-adapter")
     parser.add_argument("--ip_adapter_model_path", type=str, help="Path to pre-trained IP-adapter.")
-    parser.add_argument("--ip_adapter_tokens", type=int, default=16,
-                        help="Number of tokens to use in IP-adapter cross attention mechanism")
-    parser.add_argument("--optimize_adapter", action="store_true",
-                        help="Optimize IP-adapter parameters (projector + cross-attention layers)")
-    parser.add_argument("--adapter_attention_scale", type=float, default=1.0,
-                        help="Relative strength of the adapter cross attention layers")
-    parser.add_argument("--adapter_lr", type=float,
-                        help="Learning rate for the adapter parameters. Defaults to the global LR if not provided")
+    parser.add_argument("--ip_adapter_tokens", type=int, default=16, help="Number of tokens to use in IP-adapter cross attention mechanism")
+    parser.add_argument("--optimize_adapter", action="store_true", help="Optimize IP-adapter parameters (projector + cross-attention layers)")
+    parser.add_argument("--adapter_attention_scale", type=float, default=1.0, help="Relative strength of the adapter cross attention layers")
+    parser.add_argument("--adapter_lr", type=float, help="Learning rate for the adapter parameters. Defaults to the global LR if not provided")
 
-    parser.add_argument("--noisy_encoder_input", action="store_true",
-                        help="Noise the encoder input to the same step as the decoder?")
+    parser.add_argument("--noisy_encoder_input", action="store_true", help="Noise the encoder input to the same step as the decoder?")
 
     # related to CFG:
-    parser.add_argument("--adapter_drop_chance", type=float, default=0.0,
-                        help="Chance to drop adapter condition input during training")
-    parser.add_argument("--text_drop_chance", type=float, default=0.0,
-                        help="Chance to drop text condition during training")
+    parser.add_argument("--adapter_drop_chance", type=float, default=0.0, help="Chance to drop adapter condition input during training")
+    parser.add_argument("--text_drop_chance", type=float, default=0.0, help="Chance to drop text condition during training")
     parser.add_argument("--kv_drop_chance", type=float, default=0.0, help="Chance to drop KV condition during training")
 
+    
+    
     parser.add_argument(
         "--resolution",
         type=int,
@@ -281,7 +272,7 @@ def parse_args(input_args=None):
         type=float,
         default=None,
         help="SNR weighting gamma to be used if rebalancing the loss. Recommended value is 5.0. "
-             "More details here: https://arxiv.org/abs/2303.09556.",
+        "More details here: https://arxiv.org/abs/2303.09556.",
     )
 
     parser.add_argument(
@@ -316,7 +307,7 @@ def parse_args(input_args=None):
     )
 
     parser.add_argument("--max_grad_norm", default=1.0, type=float, help="Max gradient norm.")
-
+    
     parser.add_argument(
         "--logging_dir",
         type=str,
@@ -375,15 +366,15 @@ def parse_args(input_args=None):
         type=str,
         default="latent-consistency/lcm-lora-sdxl",
         help=("Path for lcm lora pretrained"),
-    )
-
+        )
+    
     parser.add_argument(
         "--losses_config_path",
         type=str,
         required=True,
         help=("A yaml file containing losses to use and their weights."),
     )
-
+    
     parser.add_argument(
         "--lcm_every_k_steps",
         type=int,
@@ -442,11 +433,10 @@ def parse_args(input_args=None):
         type=str,
         help=("A short description of the experiment to add to the wand run log. "),
     )
-    parser.add_argument("--encoder_lora_rank", type=int, default=0,
-                        help="Rank of Lora in unet encoder. 0 means no lora")
+    parser.add_argument("--encoder_lora_rank", type=int, default=0, help="Rank of Lora in unet encoder. 0 means no lora")
 
-    parser.add_argument("--kvcopy_lora_rank", type=int, default=0,
-                        help="Rank of lora in the kvcopy modules. 0 means no lora")
+    parser.add_argument("--kvcopy_lora_rank", type=int, default=0, help="Rank of lora in the kvcopy modules. 0 means no lora")
+
 
     if input_args is not None:
         args = parser.parse_args(input_args)

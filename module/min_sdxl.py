@@ -1,4 +1,4 @@
-# Modified from minSDXL by Simo Ryu:
+# Modified from minSDXL by Simo Ryu: 
 # https://github.com/cloneofsimo/minSDXL ,
 # which is in turn modified from the original code of:
 # https://github.com/huggingface/diffusers
@@ -17,7 +17,6 @@ from collections import namedtuple
 from torch.fft import fftn, fftshift, ifftn, ifftshift
 
 from diffusers.models.attention_processor import AttnProcessor, AttnProcessor2_0
-
 
 # Implementation of FreeU for minsdxl
 
@@ -42,7 +41,7 @@ def fourier_filter(x_in: "torch.Tensor", threshold: int, scale: int) -> "torch.T
     mask = torch.ones((B, C, H, W), device=x.device)
 
     crow, ccol = H // 2, W // 2
-    mask[..., crow - threshold: crow + threshold, ccol - threshold: ccol + threshold] = scale
+    mask[..., crow - threshold : crow + threshold, ccol - threshold : ccol + threshold] = scale
     x_freq = x_freq * mask
 
     # IFFT
@@ -53,7 +52,7 @@ def fourier_filter(x_in: "torch.Tensor", threshold: int, scale: int) -> "torch.T
 
 
 def apply_freeu(
-        resolution_idx: int, hidden_states: "torch.Tensor", res_hidden_states: "torch.Tensor", **freeu_kwargs):
+    resolution_idx: int, hidden_states: "torch.Tensor", res_hidden_states: "torch.Tensor", **freeu_kwargs):
     """Applies the FreeU mechanism as introduced in https:
     //arxiv.org/abs/2309.11497. Adapted from the official code repository: https://github.com/ChenyangSi/FreeU.
 
@@ -76,7 +75,6 @@ def apply_freeu(
         res_hidden_states = fourier_filter(res_hidden_states, threshold=1, scale=freeu_kwargs["s2"])
 
     return hidden_states, res_hidden_states
-
 
 # Diffusers-style LoRA to keep everything in the min_sdxl.py file
 
@@ -102,13 +100,13 @@ class LoRALinearLayer(nn.Module):
     """
 
     def __init__(
-            self,
-            in_features: int,
-            out_features: int,
-            rank: int = 4,
-            network_alpha: Optional[float] = None,
-            device: Optional[Union[torch.device, str]] = None,
-            dtype: Optional[torch.dtype] = None,
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 4,
+        network_alpha: Optional[float] = None,
+        device: Optional[Union[torch.device, str]] = None,
+        dtype: Optional[torch.dtype] = None,
     ):
         super().__init__()
 
@@ -135,7 +133,6 @@ class LoRALinearLayer(nn.Module):
             up_hidden_states *= self.network_alpha / self.rank
 
         return up_hidden_states.to(orig_dtype)
-
 
 class LoRACompatibleLinear(nn.Linear):
     """
@@ -204,7 +201,6 @@ class LoRACompatibleLinear(nn.Linear):
         else:
             out = super().forward(hidden_states) + (scale * self.lora_layer(hidden_states))
             return out
-
 
 class Timesteps(nn.Module):
     def __init__(self, num_channels: int = 320):
@@ -289,7 +285,7 @@ class ResnetBlock2D(nn.Module):
 
 class Attention(nn.Module):
     def __init__(
-            self, inner_dim, cross_attention_dim=None, num_heads=None, dropout=0.0, processor=None, scale_qk=True
+        self, inner_dim, cross_attention_dim=None, num_heads=None, dropout=0.0, processor=None, scale_qk=True
     ):
         super(Attention, self).__init__()
         if num_heads is None:
@@ -299,7 +295,7 @@ class Attention(nn.Module):
             self.num_heads = num_heads
             self.head_dim = inner_dim // num_heads
 
-        self.scale = self.head_dim ** -0.5
+        self.scale = self.head_dim**-0.5
         if cross_attention_dim is None:
             cross_attention_dim = inner_dim
         self.to_q = LoRACompatibleLinear(inner_dim, inner_dim, bias=False)
@@ -318,11 +314,11 @@ class Attention(nn.Module):
         self.set_processor(processor)
 
     def forward(
-            self,
-            hidden_states: torch.FloatTensor,
-            encoder_hidden_states: Optional[torch.FloatTensor] = None,
-            attention_mask: Optional[torch.FloatTensor] = None,
-            **cross_attention_kwargs,
+        self,
+        hidden_states: torch.FloatTensor,
+        encoder_hidden_states: Optional[torch.FloatTensor] = None,
+        attention_mask: Optional[torch.FloatTensor] = None,
+        **cross_attention_kwargs,
     ) -> torch.Tensor:
         r"""
         The forward method of the `Attention` class.
@@ -359,7 +355,7 @@ class Attention(nn.Module):
             attention_mask=attention_mask,
             **cross_attention_kwargs,
         )
-
+    
     def orig_forward(self, hidden_states, encoder_hidden_states=None):
         q = self.to_q(hidden_states)
         k = (
@@ -392,7 +388,7 @@ class Attention(nn.Module):
             attn_output = layer(attn_output)
 
         return attn_output
-
+    
     def set_processor(self, processor) -> None:
         r"""
         Set the attention processor to use.
@@ -404,15 +400,15 @@ class Attention(nn.Module):
         # if current processor is in `self._modules` and if passed `processor` is not, we need to
         # pop `processor` from `self._modules`
         if (
-                hasattr(self, "processor")
-                and isinstance(self.processor, torch.nn.Module)
-                and not isinstance(processor, torch.nn.Module)
+            hasattr(self, "processor")
+            and isinstance(self.processor, torch.nn.Module)
+            and not isinstance(processor, torch.nn.Module)
         ):
             print(f"You are removing possibly trained weights of {self.processor} with {processor}")
             self._modules.pop("processor")
 
         self.processor = processor
-
+    
     def get_processor(self, return_deprecated_lora: bool = False):
         r"""
         Get the attention processor in use.
@@ -502,8 +498,7 @@ class Attention(nn.Module):
             raise ValueError(f"{lora_processor_cls} does not exist.")
 
         return lora_processor
-
-
+    
 class GEGLU(nn.Module):
     def __init__(self, in_features, out_features):
         super(GEGLU, self).__init__()
@@ -704,7 +699,7 @@ class CrossAttnUpBlock2D(nn.Module):
         self.upsamplers = nn.ModuleList([Upsample2D(out_channels, out_channels)])
 
     def forward(
-            self, hidden_states, res_hidden_states_tuple, temb, encoder_hidden_states
+        self, hidden_states, res_hidden_states_tuple, temb, encoder_hidden_states
     ):
         for resnet, attn in zip(self.resnets, self.attentions):
             # pop res hidden states
@@ -738,16 +733,17 @@ class UpBlock2D(nn.Module):
     def forward(self, hidden_states, res_hidden_states_tuple, temb=None):
 
         is_freeu_enabled = (
-                getattr(self, "s1", None)
-                and getattr(self, "s2", None)
-                and getattr(self, "b1", None)
-                and getattr(self, "b2", None)
-                and getattr(self, "resolution_idx", None)
+            getattr(self, "s1", None)
+            and getattr(self, "s2", None)
+            and getattr(self, "b1", None)
+            and getattr(self, "b2", None)
+            and getattr(self, "resolution_idx", None)
         )
-
+                    
         for resnet in self.resnets:
             res_hidden_states = res_hidden_states_tuple[-1]
             res_hidden_states_tuple = res_hidden_states_tuple[:-1]
+
 
             if is_freeu_enabled:
                 hidden_states, res_hidden_states = apply_freeu(
@@ -764,7 +760,6 @@ class UpBlock2D(nn.Module):
             hidden_states = resnet(hidden_states, temb)
 
         return hidden_states
-
 
 class UNetMidBlock2DCrossAttn(nn.Module):
     def __init__(self, in_features):
@@ -845,7 +840,7 @@ class UNet2DConditionModel(nn.Module):
         self.conv_out = nn.Conv2d(320, 4, kernel_size=3, stride=1, padding=1)
 
     def forward(
-            self, sample, timesteps, encoder_hidden_states, added_cond_kwargs, **kwargs
+        self, sample, timesteps, encoder_hidden_states, added_cond_kwargs, **kwargs
     ):
         # Implement the forward pass through the model
         timesteps = timesteps.expand(sample.shape[0])

@@ -1,3 +1,18 @@
+# Copyright 2024 The InstantX Team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -44,13 +59,16 @@ from diffusers.utils.torch_utils import is_compiled_module, is_torch_version, ra
 from diffusers.pipelines.pipeline_utils import DiffusionPipeline, StableDiffusionMixin
 from diffusers.pipelines.stable_diffusion_xl.pipeline_output import StableDiffusionXLPipelineOutput
 
+
 if is_invisible_watermark_available():
     from diffusers.pipelines.stable_diffusion_xl.watermark import StableDiffusionXLWatermarker
 
 from peft import LoraConfig, set_peft_model_state_dict
 from module.aggregator import Aggregator
 
+
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
+
 
 EXAMPLE_DOC_STRING = """
     Examples:
@@ -146,10 +164,8 @@ PREVIEWER_LORA_MODULES = [
 
 def remove_attn2(model):
     def recursive_find_module(name, module):
-        if not "up_blocks" in name and not "down_blocks" in name and not "mid_block" in name:
-            return
-        elif "resnets" in name:
-            return
+        if not "up_blocks" in name and not "down_blocks" in name and not "mid_block" in name: return
+        elif "resnets" in name: return
         if hasattr(module, "attn2"):
             setattr(module, "attn2", None)
             setattr(module, "norm2", None)
@@ -178,11 +194,11 @@ def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
 
 # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.retrieve_timesteps
 def retrieve_timesteps(
-        scheduler,
-        num_inference_steps: Optional[int] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        timesteps: Optional[List[int]] = None,
-        **kwargs,
+    scheduler,
+    num_inference_steps: Optional[int] = None,
+    device: Optional[Union[str, torch.device]] = None,
+    timesteps: Optional[List[int]] = None,
+    **kwargs,
 ):
     """
     Calls the scheduler's `set_timesteps` method and retrieves timesteps from the scheduler after the call. Handles
@@ -285,19 +301,19 @@ class InstantIRPipeline(
     _callback_tensor_inputs = ["latents", "prompt_embeds", "negative_prompt_embeds"]
 
     def __init__(
-            self,
-            vae: AutoencoderKL,
-            text_encoder: CLIPTextModel,
-            text_encoder_2: CLIPTextModelWithProjection,
-            tokenizer: CLIPTokenizer,
-            tokenizer_2: CLIPTokenizer,
-            unet: UNet2DConditionModel,
-            scheduler: KarrasDiffusionSchedulers,
-            aggregator: Aggregator = None,
-            force_zeros_for_empty_prompt: bool = True,
-            add_watermarker: Optional[bool] = None,
-            feature_extractor: CLIPImageProcessor = None,
-            image_encoder: CLIPVisionModelWithProjection = None,
+        self,
+        vae: AutoencoderKL,
+        text_encoder: CLIPTextModel,
+        text_encoder_2: CLIPTextModelWithProjection,
+        tokenizer: CLIPTokenizer,
+        tokenizer_2: CLIPTokenizer,
+        unet: UNet2DConditionModel,
+        scheduler: KarrasDiffusionSchedulers,
+        aggregator: Aggregator = None,
+        force_zeros_for_empty_prompt: bool = True,
+        add_watermarker: Optional[bool] = None,
+        feature_extractor: CLIPImageProcessor = None,
+        image_encoder: CLIPVisionModelWithProjection = None,
     ):
         super().__init__()
 
@@ -379,23 +395,23 @@ class InstantIRPipeline(
         self.unet.disable_adapters()
 
         return lora_alpha
-
+    
     # Copied from diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl.StableDiffusionXLPipeline.encode_prompt
     def encode_prompt(
-            self,
-            prompt: str,
-            prompt_2: Optional[str] = None,
-            device: Optional[torch.device] = None,
-            num_images_per_prompt: int = 1,
-            do_classifier_free_guidance: bool = True,
-            negative_prompt: Optional[str] = None,
-            negative_prompt_2: Optional[str] = None,
-            prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_prompt_embeds: Optional[torch.FloatTensor] = None,
-            pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
-            lora_scale: Optional[float] = None,
-            clip_skip: Optional[int] = None,
+        self,
+        prompt: str,
+        prompt_2: Optional[str] = None,
+        device: Optional[torch.device] = None,
+        num_images_per_prompt: int = 1,
+        do_classifier_free_guidance: bool = True,
+        negative_prompt: Optional[str] = None,
+        negative_prompt_2: Optional[str] = None,
+        prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_prompt_embeds: Optional[torch.FloatTensor] = None,
+        pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
+        lora_scale: Optional[float] = None,
+        clip_skip: Optional[int] = None,
     ):
         r"""
         Encodes the prompt into text encoder hidden states.
@@ -495,9 +511,9 @@ class InstantIRPipeline(
                 untruncated_ids = tokenizer(prompt, padding="longest", return_tensors="pt").input_ids
 
                 if untruncated_ids.shape[-1] >= text_input_ids.shape[-1] and not torch.equal(
-                        text_input_ids, untruncated_ids
+                    text_input_ids, untruncated_ids
                 ):
-                    removed_text = tokenizer.batch_decode(untruncated_ids[:, tokenizer.model_max_length - 1: -1])
+                    removed_text = tokenizer.batch_decode(untruncated_ids[:, tokenizer.model_max_length - 1 : -1])
                     logger.warning(
                         "The following part of your input was truncated because CLIP can only handle sequences up to"
                         f" {tokenizer.model_max_length} tokens: {removed_text}"
@@ -654,7 +670,7 @@ class InstantIRPipeline(
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.prepare_ip_adapter_image_embeds
     def prepare_ip_adapter_image_embeds(
-            self, ip_adapter_image, ip_adapter_image_embeds, device, num_images_per_prompt, do_classifier_free_guidance
+        self, ip_adapter_image, ip_adapter_image_embeds, device, num_images_per_prompt, do_classifier_free_guidance
     ):
         if ip_adapter_image_embeds is None:
             if not isinstance(ip_adapter_image, list):
@@ -675,18 +691,15 @@ class InstantIRPipeline(
 
             image_embeds = []
             for single_ip_adapter_image, image_proj_layer in zip(
-                    ip_adapter_image, self.unet.encoder_hid_proj.image_projection_layers
+                ip_adapter_image, self.unet.encoder_hid_proj.image_projection_layers
             ):
-                output_hidden_state = isinstance(self.image_encoder, CLIPVisionModelWithProjection) and not isinstance(
-                    image_proj_layer, ImageProjection)
+                output_hidden_state = isinstance(self.image_encoder, CLIPVisionModelWithProjection) and not isinstance(image_proj_layer, ImageProjection)
                 single_image_embeds, single_negative_image_embeds = self.encode_image(
                     single_ip_adapter_image, device, 1, output_hidden_state
                 )
-                single_image_embeds = torch.stack(
-                    [single_image_embeds] * (num_images_per_prompt // single_image_embeds.shape[0]), dim=0)
+                single_image_embeds = torch.stack([single_image_embeds] * (num_images_per_prompt//single_image_embeds.shape[0]), dim=0)
                 single_negative_image_embeds = torch.stack(
-                    [single_negative_image_embeds] * (num_images_per_prompt // single_negative_image_embeds.shape[0]),
-                    dim=0
+                    [single_negative_image_embeds] * (num_images_per_prompt//single_negative_image_embeds.shape[0]), dim=0
                 )
 
                 if do_classifier_free_guidance:
@@ -734,23 +747,23 @@ class InstantIRPipeline(
         return extra_step_kwargs
 
     def check_inputs(
-            self,
-            prompt,
-            prompt_2,
-            image,
-            callback_steps,
-            negative_prompt=None,
-            negative_prompt_2=None,
-            prompt_embeds=None,
-            negative_prompt_embeds=None,
-            pooled_prompt_embeds=None,
-            ip_adapter_image=None,
-            ip_adapter_image_embeds=None,
-            negative_pooled_prompt_embeds=None,
-            controlnet_conditioning_scale=1.0,
-            control_guidance_start=0.0,
-            control_guidance_end=1.0,
-            callback_on_step_end_tensor_inputs=None,
+        self,
+        prompt,
+        prompt_2,
+        image,
+        callback_steps,
+        negative_prompt=None,
+        negative_prompt_2=None,
+        prompt_embeds=None,
+        negative_prompt_embeds=None,
+        pooled_prompt_embeds=None,
+        ip_adapter_image=None,
+        ip_adapter_image_embeds=None,
+        negative_pooled_prompt_embeds=None,
+        controlnet_conditioning_scale=1.0,
+        control_guidance_start=0.0,
+        control_guidance_end=1.0,
+        callback_on_step_end_tensor_inputs=None,
     ):
         if callback_steps is not None and (not isinstance(callback_steps, int) or callback_steps <= 0):
             raise ValueError(
@@ -759,7 +772,7 @@ class InstantIRPipeline(
             )
 
         if callback_on_step_end_tensor_inputs is not None and not all(
-                k in self._callback_tensor_inputs for k in callback_on_step_end_tensor_inputs
+            k in self._callback_tensor_inputs for k in callback_on_step_end_tensor_inputs
         ):
             raise ValueError(
                 f"`callback_on_step_end_tensor_inputs` has to be in {self._callback_tensor_inputs}, but found {[k for k in callback_on_step_end_tensor_inputs if k not in self._callback_tensor_inputs]}"
@@ -818,9 +831,9 @@ class InstantIRPipeline(
             self.aggregator, torch._dynamo.eval_frame.OptimizedModule
         )
         if (
-                isinstance(self.aggregator, Aggregator)
-                or is_compiled
-                and isinstance(self.aggregator._orig_mod, Aggregator)
+            isinstance(self.aggregator, Aggregator)
+            or is_compiled
+            and isinstance(self.aggregator._orig_mod, Aggregator)
         ):
             self.check_image(image, prompt, prompt_embeds)
         else:
@@ -860,12 +873,12 @@ class InstantIRPipeline(
         image_is_np_list = isinstance(image, list) and isinstance(image[0], np.ndarray)
 
         if (
-                not image_is_pil
-                and not image_is_tensor
-                and not image_is_np
-                and not image_is_pil_list
-                and not image_is_tensor_list
-                and not image_is_np_list
+            not image_is_pil
+            and not image_is_tensor
+            and not image_is_np
+            and not image_is_pil_list
+            and not image_is_tensor_list
+            and not image_is_np_list
         ):
             raise TypeError(
                 f"image must be passed and be one of PIL image, numpy array, torch tensor, list of PIL images, list of numpy arrays or list of torch tensors, but is {type(image)}"
@@ -890,15 +903,15 @@ class InstantIRPipeline(
 
     # Copied from diffusers.pipelines.controlnet.pipeline_controlnet.StableDiffusionControlNetPipeline.prepare_image
     def prepare_image(
-            self,
-            image,
-            width,
-            height,
-            batch_size,
-            num_images_per_prompt,
-            device,
-            dtype,
-            do_classifier_free_guidance=False,
+        self,
+        image,
+        width,
+        height,
+        batch_size,
+        num_images_per_prompt,
+        device,
+        dtype,
+        do_classifier_free_guidance=False,
     ):
         image = self.control_image_processor.preprocess(image, height=height, width=width).to(dtype=torch.float32)
         image_batch_size = image.shape[0]
@@ -917,11 +930,10 @@ class InstantIRPipeline(
 
     @torch.no_grad()
     def init_latents(self, latents, generator, timestep):
-        noise = torch.randn(latents.shape, generator=generator, device=self.vae.device, dtype=self.vae.dtype,
-                            layout=torch.strided)
+        noise = torch.randn(latents.shape, generator=generator, device=self.vae.device, dtype=self.vae.dtype, layout=torch.strided)
         bsz = latents.shape[0]
         print(f"init latent at {timestep}")
-        timestep = torch.tensor([timestep] * bsz, device=self.vae.device)
+        timestep = torch.tensor([timestep]*bsz, device=self.vae.device)
         # Note that the latents will be scaled aleady by scheduler.add_noise
         latents = self.scheduler.add_noise(latents, noise, timestep)
         return latents
@@ -951,12 +963,12 @@ class InstantIRPipeline(
 
     # Copied from diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl.StableDiffusionXLPipeline._get_add_time_ids
     def _get_add_time_ids(
-            self, original_size, crops_coords_top_left, target_size, dtype, text_encoder_projection_dim=None
+        self, original_size, crops_coords_top_left, target_size, dtype, text_encoder_projection_dim=None
     ):
         add_time_ids = list(original_size + crops_coords_top_left + target_size)
 
         passed_add_embed_dim = (
-                self.unet.config.addition_time_embed_dim * len(add_time_ids) + text_encoder_projection_dim
+            self.unet.config.addition_time_embed_dim * len(add_time_ids) + text_encoder_projection_dim
         )
         expected_add_embed_dim = self.unet.add_embedding.linear_1.in_features
 
@@ -990,7 +1002,7 @@ class InstantIRPipeline(
 
     # Copied from diffusers.pipelines.latent_consistency_models.pipeline_latent_consistency_text2img.LatentConsistencyModelPipeline.get_guidance_scale_embedding
     def get_guidance_scale_embedding(
-            self, w: torch.Tensor, embedding_dim: int = 512, dtype: torch.dtype = torch.float32
+        self, w: torch.Tensor, embedding_dim: int = 512, dtype: torch.dtype = torch.float32
     ) -> torch.FloatTensor:
         """
         See https://github.com/google-research/vdm/blob/dc27b98a554f65cdc654b800da5aa1846545d41b/model_vdm.py#L298
@@ -1053,53 +1065,53 @@ class InstantIRPipeline(
     @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
-            self,
-            prompt: Union[str, List[str]] = None,
-            prompt_2: Optional[Union[str, List[str]]] = None,
-            image: PipelineImageInput = None,
-            height: Optional[int] = None,
-            width: Optional[int] = None,
-            num_inference_steps: int = 30,
-            timesteps: List[int] = None,
-            denoising_end: Optional[float] = None,
-            guidance_scale: float = 7.0,
-            negative_prompt: Optional[Union[str, List[str]]] = None,
-            negative_prompt_2: Optional[Union[str, List[str]]] = None,
-            num_images_per_prompt: Optional[int] = 1,
-            eta: float = 0.0,
-            generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
-            latents: Optional[torch.FloatTensor] = None,
-            prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_prompt_embeds: Optional[torch.FloatTensor] = None,
-            pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
-            ip_adapter_image: Optional[PipelineImageInput] = None,
-            ip_adapter_image_embeds: Optional[List[torch.FloatTensor]] = None,
-            output_type: Optional[str] = "pil",
-            return_dict: bool = True,
-            save_preview_row: bool = False,
-            init_latents_with_lq: bool = True,
-            multistep_restore: bool = False,
-            adastep_restore: bool = False,
-            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-            guidance_rescale: float = 0.0,
-            controlnet_conditioning_scale: float = 1.0,
-            control_guidance_start: float = 0.0,
-            control_guidance_end: float = 1.0,
-            preview_start: float = 0.0,
-            preview_end: float = 1.0,
-            original_size: Tuple[int, int] = None,
-            crops_coords_top_left: Tuple[int, int] = (0, 0),
-            target_size: Tuple[int, int] = None,
-            negative_original_size: Optional[Tuple[int, int]] = None,
-            negative_crops_coords_top_left: Tuple[int, int] = (0, 0),
-            negative_target_size: Optional[Tuple[int, int]] = None,
-            clip_skip: Optional[int] = None,
-            callback_on_step_end: Optional[Callable[[int, int, Dict], None]] = None,
-            callback_on_step_end_tensor_inputs: List[str] = ["latents"],
-            previewer_scheduler: KarrasDiffusionSchedulers = None,
-            reference_latents: Optional[torch.FloatTensor] = None,
-            **kwargs,
+        self,
+        prompt: Union[str, List[str]] = None,
+        prompt_2: Optional[Union[str, List[str]]] = None,
+        image: PipelineImageInput = None,
+        height: Optional[int] = None,
+        width: Optional[int] = None,
+        num_inference_steps: int = 30,
+        timesteps: List[int] = None,
+        denoising_end: Optional[float] = None,
+        guidance_scale: float = 7.0,
+        negative_prompt: Optional[Union[str, List[str]]] = None,
+        negative_prompt_2: Optional[Union[str, List[str]]] = None,
+        num_images_per_prompt: Optional[int] = 1,
+        eta: float = 0.0,
+        generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
+        latents: Optional[torch.FloatTensor] = None,
+        prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_prompt_embeds: Optional[torch.FloatTensor] = None,
+        pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
+        ip_adapter_image: Optional[PipelineImageInput] = None,
+        ip_adapter_image_embeds: Optional[List[torch.FloatTensor]] = None,
+        output_type: Optional[str] = "pil",
+        return_dict: bool = True,
+        save_preview_row: bool = False,
+        init_latents_with_lq: bool = True,
+        multistep_restore: bool = False,
+        adastep_restore: bool = False,
+        cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+        guidance_rescale: float = 0.0,
+        controlnet_conditioning_scale: float = 1.0,
+        control_guidance_start: float = 0.0,
+        control_guidance_end: float = 1.0,
+        preview_start: float = 0.0,
+        preview_end: float = 1.0,
+        original_size: Tuple[int, int] = None,
+        crops_coords_top_left: Tuple[int, int] = (0, 0),
+        target_size: Tuple[int, int] = None,
+        negative_original_size: Optional[Tuple[int, int]] = None,
+        negative_crops_coords_top_left: Tuple[int, int] = (0, 0),
+        negative_target_size: Optional[Tuple[int, int]] = None,
+        clip_skip: Optional[int] = None,
+        callback_on_step_end: Optional[Callable[[int, int, Dict], None]] = None,
+        callback_on_step_end_tensor_inputs: List[str] = ["latents"],
+        previewer_scheduler: KarrasDiffusionSchedulers = None,
+        reference_latents: Optional[torch.FloatTensor] = None,
+        **kwargs,
     ):
         r"""
         The call function to the pipeline for generation.
@@ -1403,14 +1415,12 @@ class InstantIRPipeline(
         controlnet_keep = []
         previewing = []
         for i in range(len(timesteps)):
-            keeps = 1.0 - float(
-                i / len(timesteps) < control_guidance_start or (i + 1) / len(timesteps) > control_guidance_end)
+            keeps = 1.0 - float(i / len(timesteps) < control_guidance_start or (i + 1) / len(timesteps) > control_guidance_end)
             controlnet_keep.append(keeps)
             use_preview = 1.0 - float(i / len(timesteps) < preview_start or (i + 1) / len(timesteps) > preview_end)
             previewing.append(use_preview)
         if isinstance(controlnet_conditioning_scale, list):
-            assert len(controlnet_conditioning_scale) == len(
-                timesteps), f"{len(controlnet_conditioning_scale)} controlnet scales do not match number of sampling steps {len(timesteps)}"
+            assert len(controlnet_conditioning_scale) == len(timesteps), f"{len(controlnet_conditioning_scale)} controlnet scales do not match number of sampling steps {len(timesteps)}"
         else:
             controlnet_conditioning_scale = [controlnet_conditioning_scale] * len(controlnet_keep)
 
@@ -1458,10 +1468,10 @@ class InstantIRPipeline(
 
         # 8.1 Apply denoising_end
         if (
-                self.denoising_end is not None
-                and isinstance(self.denoising_end, float)
-                and self.denoising_end > 0
-                and self.denoising_end < 1
+            self.denoising_end is not None
+            and isinstance(self.denoising_end, float)
+            and self.denoising_end > 0
+            and self.denoising_end < 1
         ):
             discrete_timestep_cutoff = int(
                 round(
@@ -1520,7 +1530,7 @@ class InstantIRPipeline(
 
                 current_cross_attention_kwargs = {"temb": cross_attention_emb}
                 if cross_attention_kwargs is not None:
-                    for k, v in cross_attention_kwargs.items():
+                    for k,v in cross_attention_kwargs.items():
                         current_cross_attention_kwargs[k] = v
                 self._cross_attention_kwargs = current_cross_attention_kwargs
 
@@ -1529,7 +1539,7 @@ class InstantIRPipeline(
                 cond_scale = adaRes_scale * controlnet_keep[i]
                 cond_scale = torch.cat([cond_scale] * 2) if self.do_classifier_free_guidance else cond_scale
 
-                if (cond_scale > 0.1).sum().item() > 0:
+                if (cond_scale>0.1).sum().item() > 0:
                     if previewing[i] > 0:
                         # preview with LCM
                         self.unet.enable_adapters()
@@ -1546,7 +1556,7 @@ class InstantIRPipeline(
                             preview_noise,
                             t.to(dtype=torch.int64),
                             # torch.cat([latents] * 2) if self.do_classifier_free_guidance else latents,
-                            latent_model_input,  # scaled latents here for compatibility
+                            latent_model_input,     # scaled latents here for compatibility
                             return_dict=False
                         )[0]
                         self.unet.disable_adapters()
@@ -1556,22 +1566,18 @@ class InstantIRPipeline(
                         else:
                             preview_row.append(preview_latent.to('cpu'))
                         # Prepare 2nd order step.
-                        if multistep_restore and i + 1 < len(timesteps):
-                            noise_preview = preview_noise.chunk(2)[
-                                1] if self.do_classifier_free_guidance else preview_noise
+                        if multistep_restore and i+1 < len(timesteps):
+                            noise_preview = preview_noise.chunk(2)[1] if self.do_classifier_free_guidance else preview_noise
                             first_step = self.scheduler.step(
                                 noise_preview, t, latents,
                                 **extra_step_kwargs, return_dict=True, step_forward=False
                             )
                             prev_t = timesteps[i + 1]
-                            unet_model_input = torch.cat([
-                                                             first_step.prev_sample] * 2) if self.do_classifier_free_guidance else first_step.prev_sample
-                            unet_model_input = self.scheduler.scale_model_input(unet_model_input, prev_t,
-                                                                                heun_step=True)
+                            unet_model_input = torch.cat([first_step.prev_sample] * 2) if self.do_classifier_free_guidance else first_step.prev_sample
+                            unet_model_input = self.scheduler.scale_model_input(unet_model_input, prev_t, heun_step=True)
 
                     elif reference_latents is not None:
-                        preview_latent = torch.cat(
-                            [reference_latents] * 2) if self.do_classifier_free_guidance else reference_latents
+                        preview_latent = torch.cat([reference_latents] * 2) if self.do_classifier_free_guidance else reference_latents
                     else:
                         preview_latent = image
 
@@ -1579,7 +1585,7 @@ class InstantIRPipeline(
                     # preview_noise = torch.randn_like(preview_latent)
                     # preview_latent = self.scheduler.add_noise(preview_latent, preview_noise, t)
 
-                    preview_latent = preview_latent.to(dtype=next(aggregator.parameters()).dtype)
+                    preview_latent=preview_latent.to(dtype=next(aggregator.parameters()).dtype)
 
                     # Aggregator inference
                     down_block_res_samples, mid_block_res_sample = aggregator(
@@ -1593,8 +1599,8 @@ class InstantIRPipeline(
                     )
 
                 # aggregator features scaling
-                down_block_res_samples = [sample * cond_scale for sample in down_block_res_samples]
-                mid_block_res_sample = mid_block_res_sample * cond_scale
+                down_block_res_samples = [sample*cond_scale for sample in down_block_res_samples]
+                mid_block_res_sample = mid_block_res_sample*cond_scale
 
                 # predict the noise residual
                 noise_pred = self.unet(
@@ -1628,10 +1634,8 @@ class InstantIRPipeline(
 
                 # Adaptive restoration.
                 if adastep_restore:
-                    pred_x0_l2 = ((preview_latent[latents.shape[0]:].float() - unet_pred_latent.float())).pow(2).sum(
-                        dim=(1, 2, 3))
-                    previewer_l2 = ((preview_latent[latents.shape[0]:].float() - previewer_mean.float())).pow(2).sum(
-                        dim=(1, 2, 3))
+                    pred_x0_l2 = ((preview_latent[latents.shape[0]:].float()-unet_pred_latent.float())).pow(2).sum(dim=(1,2,3))
+                    previewer_l2 = ((preview_latent[latents.shape[0]:].float()-previewer_mean.float())).pow(2).sum(dim=(1,2,3))
                     # unet_l2 = ((unet_pred_latent.float()-unet_mean.float())).pow(2).sum(dim=(1,2,3)).sqrt()
                     # l2_error = (((preview_latent[latents.shape[0]:]-previewer_mean) - (unet_pred_latent-unet_mean))).pow(2).mean(dim=(1,2,3))
                     # preview_error = torch.nn.functional.cosine_similarity(preview_latent[latents.shape[0]:].reshape(latents.shape[0], -1), unet_pred_latent.reshape(latents.shape[0],-1))
@@ -1704,16 +1708,13 @@ class InstantIRPipeline(
             if needs_upcasting:
                 self.upcast_vae()
             for preview_latents in preview_row:
-                preview_latents = preview_latents.to(device=self.device,
-                                                     dtype=next(iter(self.vae.post_quant_conv.parameters())).dtype)
+                preview_latents = preview_latents.to(device=self.device, dtype=next(iter(self.vae.post_quant_conv.parameters())).dtype)
                 if has_latents_mean and has_latents_std:
                     latents_mean = (
-                        torch.tensor(self.vae.config.latents_mean).view(1, 4, 1, 1).to(preview_latents.device,
-                                                                                       preview_latents.dtype)
+                        torch.tensor(self.vae.config.latents_mean).view(1, 4, 1, 1).to(preview_latents.device, preview_latents.dtype)
                     )
                     latents_std = (
-                        torch.tensor(self.vae.config.latents_std).view(1, 4, 1, 1).to(preview_latents.device,
-                                                                                      preview_latents.dtype)
+                        torch.tensor(self.vae.config.latents_std).view(1, 4, 1, 1).to(preview_latents.device, preview_latents.dtype)
                     )
                     preview_latents = preview_latents * latents_std / self.vae.config.scaling_factor + latents_mean
                 else:
