@@ -2,7 +2,7 @@
 <h1>Blind Image Restoration with</br>Instant Generative Reference</h1>
 </div>
 
-## Usage
+### Usage
 
 ### 1. Clone this repo and setting up environment
 
@@ -25,7 +25,7 @@ pip install -r requirements.txt
 ### 3. Deploy local gradio demo
 
 ```sh
-INSTANTIR_PATH=<path_to_InstantIR> python gradio_demo/app.py
+python gradio_demo/app.py
 ```
 
 Then, visit the local demo via browser at `http://localhost:7860`.
