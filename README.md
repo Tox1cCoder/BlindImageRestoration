@@ -4,9 +4,7 @@
 
 ## Usage
 
-### Quick start
-
-#### 1. Clone this repo and setting up environment
+### 1. Clone this repo and setting up environment
 
 ```sh
 git clone https://github.com/Tox1cCoder/BlindImageRestoration.git
@@ -16,7 +14,7 @@ conda activate blindir
 pip install -r requirements.txt
 ```
 
-#### 2. Download pre-trained models
+### 2. Download pre-trained models
 
 | link                                                                    | Python command                                                        
 |:------------------------------------------------------------------------|:----------------------------------------------------------------------
@@ -24,4 +22,4 @@ pip install -r requirements.txt
 | [facebook/dinov2-large](https://huggingface.co/facebook/dinov2-large)   | `hf_hub_download(repo_id="facebook/dinov2-large")`                    
 | [InstantX/InstantIR](https://huggingface.co/InstantX/InstantIR)         | `hf_hub_download(repo_id="InstantX/InstantIR")`                       
 
-#### 3. Inference
+### 3. Inference
