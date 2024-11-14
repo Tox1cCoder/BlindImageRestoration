@@ -32,11 +32,4 @@ Then, visit the local demo via browser at `http://localhost:7860`.
 
 ## Reference
 
-```
-@article{huang2024instantir,
-  title={InstantIR: Blind Image Restoration with Instant Generative Reference},
-  author={Huang, Jen-Yuan and Wang, Haofan and Wang, Qixun and Bai, Xu and Ai, Hao and Xing, Peng and Huang, Jen-Tse},
-  journal={arXiv preprint arXiv:2410.06551},
-  year={2024}
-}
-```
+[InstantIR: Blind Image Restoration with Instant Generative Reference](https://arxiv.org/abs/2410.06551)
