@@ -29,7 +29,3 @@ python gradio_demo/app.py
 ```
 
 Then, visit the local demo via browser at `http://localhost:7860`.
-
-## Reference
-
-[InstantIR: Blind Image Restoration with Instant Generative Reference](https://arxiv.org/abs/2410.06551)
