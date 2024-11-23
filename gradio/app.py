@@ -185,7 +185,7 @@ with gr.Blocks() as demo:
         ## Basic usage:
         1. Upload an image you want to restore;
         2. Optionally, tune the `Steps` `CFG Scale` parameters. Typically higher steps lead to better results, but less than 50 is recommended for efficiency;
-        3. Click `InstantIR magic!`.
+        3. Click `Image Quality Restore`.
         """)
     with gr.Row():
         lq_img = gr.Image(label="Low-quality image", type="pil")
@@ -204,7 +204,7 @@ with gr.Blocks() as demo:
             mode = gr.Checkbox(label="Creative Restoration", value=False)
     with gr.Row():
         with gr.Row():
-            restore_btn = gr.Button("InstantIR magic!")
+            restore_btn = gr.Button("Image Quality Restore")
             clear_btn = gr.ClearButton()
         index = gr.Slider(label="Restoration Previews", value=29, minimum=0, maximum=29, step=1)
     with gr.Row():
@@ -237,6 +237,6 @@ with gr.Blocks() as demo:
         ## Examples
         Here are some examplar usage of InstantIR:
         """)
-    # examples = gr.Gallery(label="Examples")
+    examples = gr.Gallery(label="Examples")
 
 demo.queue().launch()
