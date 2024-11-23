@@ -237,6 +237,6 @@ with gr.Blocks() as demo:
         ## Examples
         Here are some examplar usage of InstantIR:
         """)
-    examples = gr.Gallery(label="Examples")
+    # examples = gr.Gallery(label="Examples")
 
 demo.queue().launch()
